@@ -1,0 +1,11 @@
+﻿Analyzing lib...
+
+warning - features\plan_draft\presentation\plan_draft_screen.dart:27:10 - A value for optional parameter 'completed' isn't ever given. Try removing the unused parameter. - unused_element_parameter
+   info - features\plan_draft\data\plan_draft_repository.dart:31:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\plan_draft\data\plan_draft_repository.dart:38:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\plan_draft\data\plan_draft_repository.dart:46:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\plan_draft\data\plan_draft_repository.dart:54:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\plan_draft\data\plan_draft_repository.dart:72:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - features\plan_draft\data\plan_draft_repository.dart:80:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+
+7 issues found.

@@ -1,0 +1,5 @@
+﻿Analyzing AI STUDY PLANNER APP...                               
+
+warning - The value of the local variable 'tasks' isn't used - lib\features\plan_generator\data\study_plan_repository_impl.dart:83:13 - unused_local_variable
+  error - The argument type 'StudyPlan' can't be assigned to the parameter type 'PlanGenerationResult'.  - lib\features\plan_generator\data\study_plan_repository_impl.dart:107:20 - argument_type_not_assignable
+

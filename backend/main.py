@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from pydantic import BaseModel
 from typing import List
@@ -8,6 +9,12 @@ from services.roadmap_service import generate_roadmap
 from services.daily_plan_service import generate_daily_plan
 
 app = FastAPI(title="AI Study Planner Backend")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/health")
 def health_check():

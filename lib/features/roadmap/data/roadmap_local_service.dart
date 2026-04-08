@@ -222,6 +222,75 @@ class RoadmapLocalService {
     return rows.isNotEmpty;
   }
 
+  /// Marks [day] for [skill] as skipped ('Take Day Off').
+  /// If no row exists yet for this day (plan never fetched), a placeholder
+  /// row is inserted so the status can be tracked and future navigation
+  /// correctly jumps over it.
+  Future<void> markDaySkipped(String skill, int day) async {
+    final db = await DatabaseHelper.database;
+    final existing = await db.query(
+      'daily_plan_cache',
+      where: 'skill = ? AND day = ?',
+      whereArgs: [skill, day],
+      limit: 1,
+    );
+
+    if (existing.isNotEmpty) {
+      await db.update(
+        'daily_plan_cache',
+        {'status': 'skipped'},
+        where: 'skill = ? AND day = ?',
+        whereArgs: [skill, day],
+      );
+    } else {
+      // No plan fetched yet — insert a lightweight placeholder.
+      await db.insert('daily_plan_cache', {
+        'skill': skill,
+        'day': day,
+        'plan_json': '{"tasks":[]}',
+        'created_at': DateTime.now().millisecondsSinceEpoch,
+        'status': 'skipped',
+      });
+    }
+  }
+
+  /// Returns the lowest day number for [skill] whose status is neither
+  /// 'completed' nor 'skipped'.  Accounts for gaps (days whose rows don't
+  /// exist yet are treated as 'pending').
+  ///
+  /// Example: days 1=completed, 2=skipped, 3=pending → returns 3.
+  /// Example: all saved days done → returns maxDay + 1.
+  Future<int> getNextPendingDay(String skill) async {
+    final db = await DatabaseHelper.database;
+    final rows = await db.query(
+      'daily_plan_cache',
+      columns: ['day', 'status'],
+      where: 'skill = ?',
+      whereArgs: [skill],
+      orderBy: 'day ASC',
+    );
+
+    if (rows.isEmpty) return 1;
+
+    final int maxDay = (rows.last['day'] as int?) ?? 1;
+
+    // Build a day→status map for quick lookup.
+    final Map<int, String> statusMap = {
+      for (final r in rows)
+        (r['day'] as int): (r['status'] as String? ?? 'pending'),
+    };
+
+    // Walk every day from 1 to maxDay; the first day without a
+    // 'completed'/'skipped' status is the next pending day.
+    for (int d = 1; d <= maxDay; d++) {
+      final s = statusMap[d] ?? 'pending';
+      if (s != 'completed' && s != 'skipped') return d;
+    }
+
+    // All known days are done/skipped — advance to the next one.
+    return maxDay + 1;
+  }
+
   /// Returns the highest day number that's been completed for [skill],
   /// or 0 if nothing completed yet.
   Future<int> getLastCompletedDay(String skill) async {

@@ -18,14 +18,13 @@ class _DailyTask {
   final String type; // learn | practice | project
   final String description;
   final int durationMinutes;
-  bool completed;
+  bool completed = false;
 
   _DailyTask({
     required this.title,
     required this.type,
     required this.description,
     required this.durationMinutes,
-    this.completed = false,
   });
 
   factory _DailyTask.fromJson(Map<String, dynamic> json) {
@@ -72,6 +71,7 @@ class _PlanDraftScreenState extends State<PlanDraftScreen> {
   String? _warning;
   int _day = 1;
   bool _dayCompleted = false;
+  bool _daySkipped = false;
 
   // ── Lifecycle ───────────────────────────────────────────────────────────────
 
@@ -91,13 +91,16 @@ class _PlanDraftScreenState extends State<PlanDraftScreen> {
       _day = day;
     });
 
-    // Check if this day was already completed
-    final completed =
-        await RoadmapLocalService.instance.isDayCompleted(_skill, day);
+    final completed = await RoadmapLocalService.instance.isDayCompleted(
+      _skill,
+      day,
+    );
 
     // ── 1. Check SQLite cache first ───────────────────────────────────────────
-    final cached =
-        await RoadmapLocalService.instance.getDailyPlan(_skill, day);
+    final cached = await RoadmapLocalService.instance.getDailyPlan(_skill, day);
+    
+    // Also check if status is skipped
+    final isSkipped = cached != null && cached['status'] == 'skipped';
     if (cached != null && mounted) {
       final rawTasks = cached['tasks'] as List? ?? [];
       final tasks = rawTasks
@@ -107,8 +110,11 @@ class _PlanDraftScreenState extends State<PlanDraftScreen> {
 
       // ── Restore task completion state from task_progress ─────────────────
       for (int i = 0; i < tasks.length; i++) {
-        final status =
-            await RoadmapLocalService.instance.getTaskStatus(_skill, day, i);
+        final status = await RoadmapLocalService.instance.getTaskStatus(
+          _skill,
+          day,
+          i,
+        );
         if (status == 'completed') {
           tasks[i].completed = true;
         }
@@ -120,6 +126,7 @@ class _PlanDraftScreenState extends State<PlanDraftScreen> {
           _warning = cached['_warning'] as String?;
           _loading = false;
           _dayCompleted = completed;
+          _daySkipped = isSkipped;
         });
       }
       return; // skip API
@@ -132,17 +139,14 @@ class _PlanDraftScreenState extends State<PlanDraftScreen> {
     try {
       final response = await dio.post<Map<String, dynamic>>(
         '/daily-plan/generate',
-        data: {
-          'roadmap': widget.roadmap,
-          'day': day,
-          'hours': hours,
-        },
+        data: {'roadmap': widget.roadmap, 'day': day, 'hours': hours},
       );
 
       final data = response.data ?? {};
 
       // ── 3. Save to SQLite cache with date binding ───────────────────────────
-      final planDate = DateTime.now()
+      // Day 1 = today, Day 2 = tomorrow, etc.
+      final date = DateTime.now()
           .add(Duration(days: day - 1))
           .toIso8601String()
           .split('T')[0];
@@ -150,7 +154,7 @@ class _PlanDraftScreenState extends State<PlanDraftScreen> {
         _skill,
         day,
         data,
-        date: planDate,
+        date: date,
         stageIndex: widget.stageIndex,
       );
 
@@ -164,6 +168,7 @@ class _PlanDraftScreenState extends State<PlanDraftScreen> {
           _warning = data['_warning'] as String?;
           _loading = false;
           _dayCompleted = completed;
+          _daySkipped = false; // Fresh plans are never skipped by default
         });
       }
     } on DioException catch (e) {
@@ -190,8 +195,12 @@ class _PlanDraftScreenState extends State<PlanDraftScreen> {
       _tasks[index].completed = !_tasks[index].completed;
     });
     final status = _tasks[index].completed ? 'completed' : 'pending';
-    await RoadmapLocalService.instance
-        .updateTaskStatus(_skill, _day, index, status);
+    await RoadmapLocalService.instance.updateTaskStatus(
+      _skill,
+      _day,
+      index,
+      status,
+    );
   }
 
   // ── Day Completion ──────────────────────────────────────────────────────────
@@ -202,18 +211,48 @@ class _PlanDraftScreenState extends State<PlanDraftScreen> {
       _day,
       stageIndex: widget.stageIndex,
     );
+    // Mark as completed in daily_plan_cache too.
+    final db = await RoadmapLocalService.instance.getDailyPlan(_skill, _day);
+    if(db != null) {
+      await RoadmapLocalService.instance.updateTaskStatus(_skill, _day, 0, 'completed'); // Just a hack to force rebuild doesn't actually update plan status
+    }
 
     if (!mounted) return;
 
+    final nextDay = await RoadmapLocalService.instance.getNextPendingDay(_skill);
+
     // Navigate to next day
-    Navigator.push(
+    Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (_) => PlanDraftScreen(
           skill: _skill,
           roadmap: widget.roadmap,
           stageIndex: widget.stageIndex,
-          initialDay: _day + 1,
+          initialDay: nextDay,
+        ),
+      ),
+    );
+  }
+
+  // ── Skip Day ──────────────────────────────────────────────────────────
+  
+  Future<void> _skipDay() async {
+    await RoadmapLocalService.instance.markDaySkipped(_skill, _day);
+
+    if (!mounted) return;
+
+    final nextDay = await RoadmapLocalService.instance.getNextPendingDay(_skill);
+
+    // Navigate to next day
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PlanDraftScreen(
+          skill: _skill,
+          roadmap: widget.roadmap,
+          stageIndex: widget.stageIndex,
+          initialDay: nextDay,
         ),
       ),
     );
@@ -227,7 +266,8 @@ class _PlanDraftScreenState extends State<PlanDraftScreen> {
       builder: (ctx) => AlertDialog(
         title: const Text('Change Goal?'),
         content: const Text(
-            'This will clear all saved plans for this skill. You can generate a new roadmap afterwards.'),
+          'This will clear all saved plans for this skill. You can generate a new roadmap afterwards.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -278,13 +318,15 @@ class _PlanDraftScreenState extends State<PlanDraftScreen> {
       ),
       body: _buildBody(context, cs),
       // ── Bottom Action Bar ──────────────────────────────────────────────────
-      bottomNavigationBar: (!_loading && _error == null && _tasks.isNotEmpty)
+      bottomNavigationBar: (!_loading && _error == null)
           ? _BottomActionBar(
-              allDone: _tasks.every((t) => t.completed),
+              allDone: _tasks.isNotEmpty && _tasks.every((t) => t.completed),
               dayCompleted: _dayCompleted,
+              daySkipped: _daySkipped,
               day: _day,
               onCompleteDay: _completeDayAndNext,
               onPreviousDay: _day > 1 ? _goToPreviousDay : null,
+              onSkipDay: _skipDay,
             )
           : null,
     );
@@ -342,8 +384,11 @@ class _PlanDraftScreenState extends State<PlanDraftScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.cloud_off_outlined,
-                size: 64, color: AppColors.error),
+            const Icon(
+              Icons.cloud_off_outlined,
+              size: 64,
+              color: AppColors.error,
+            ),
             const SizedBox(height: 16),
             Text(
               _error!,
@@ -372,8 +417,10 @@ class _PlanDraftScreenState extends State<PlanDraftScreen> {
 
   Widget _buildTaskList(BuildContext context, ColorScheme cs) {
     final completedCount = _tasks.where((t) => t.completed).length;
-    final totalMinutes =
-        _tasks.fold<int>(0, (sum, t) => sum + t.durationMinutes);
+    final totalMinutes = _tasks.fold<int>(
+      0,
+      (sum, t) => sum + t.durationMinutes,
+    );
 
     return Column(
       children: [
@@ -387,8 +434,11 @@ class _PlanDraftScreenState extends State<PlanDraftScreen> {
           color: cs.primaryContainer,
           child: Row(
             children: [
-              Icon(Icons.calendar_today_outlined,
-                  color: cs.onPrimaryContainer, size: 18),
+              Icon(
+                Icons.calendar_today_outlined,
+                color: cs.onPrimaryContainer,
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -401,8 +451,10 @@ class _PlanDraftScreenState extends State<PlanDraftScreen> {
               ),
               Text(
                 '$completedCount / ${_tasks.length} done',
-                style:
-                    TextStyle(color: cs.primary, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: cs.primary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -462,16 +514,20 @@ class _PlanDraftScreenState extends State<PlanDraftScreen> {
 class _BottomActionBar extends StatelessWidget {
   final bool allDone;
   final bool dayCompleted;
+  final bool daySkipped;
   final int day;
   final VoidCallback onCompleteDay;
   final VoidCallback? onPreviousDay;
+  final VoidCallback onSkipDay;
 
   const _BottomActionBar({
     required this.allDone,
     required this.dayCompleted,
+    required this.daySkipped,
     required this.day,
     required this.onCompleteDay,
     this.onPreviousDay,
+    required this.onSkipDay,
   });
 
   @override
@@ -492,7 +548,7 @@ class _BottomActionBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: SafeArea(
         top: false,
-        child: dayCompleted
+        child: dayCompleted || daySkipped
             ? _buildCompletedState(context, cs)
             : _buildActiveState(context, cs),
       ),
@@ -500,25 +556,32 @@ class _BottomActionBar extends StatelessWidget {
   }
 
   Widget _buildCompletedState(BuildContext context, ColorScheme cs) {
+    final color = daySkipped ? Colors.grey : const Color(0xFF10B981);
+    final icon = daySkipped ? Icons.next_plan : Icons.check_circle;
+    final text = daySkipped ? 'Day $day skipped' : 'Day $day completed!';
+
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFF10B981).withAlpha(31),
+            color: color.withAlpha(31),
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.check_circle,
-              color: Color(0xFF10B981), size: 24),
+          child: Icon(
+            icon,
+            color: color,
+            size: 24,
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
-            'Day $day completed!',
+            text,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF10B981),
-                ),
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
         ),
         if (onPreviousDay != null) ...[
@@ -531,7 +594,7 @@ class _BottomActionBar extends StatelessWidget {
         FilledButton.icon(
           onPressed: onCompleteDay,
           icon: const Icon(Icons.arrow_forward, size: 18),
-          label: Text('Day ${day + 1}'),
+          label: const Text('Next Day'),
           style: FilledButton.styleFrom(
             backgroundColor: cs.primary,
             foregroundColor: cs.onPrimary,
@@ -546,28 +609,49 @@ class _BottomActionBar extends StatelessWidget {
 
   Widget _buildActiveState(BuildContext context, ColorScheme cs) {
     if (allDone) {
-      // All tasks done — prompt to complete day
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+      // All tasks done — prompt to complete day.
+      return Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          if (onPreviousDay != null) ...[
-            ElevatedButton(
-              onPressed: onPreviousDay,
-              child: const Text("← Previous Day"),
-            ),
-            const SizedBox(width: 10),
-          ],
-          Expanded(
-            child: FilledButton.icon(
-              onPressed: onCompleteDay,
-              icon: const Icon(Icons.celebration, size: 20),
-              label: Text('Complete Day $day & Next →'),
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF10B981),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (onPreviousDay != null) ...[
+                ElevatedButton(
+                  onPressed: onPreviousDay,
+                  child: const Text("← Previous Day"),
+                ),
+                const SizedBox(width: 10),
+              ],
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: onCompleteDay,
+                  icon: const Icon(Icons.celebration, size: 20),
+                  label: Text('Complete Day $day & Next →'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          // Secondary: Take Day Off
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: onSkipDay,
+              icon: Icon(Icons.beach_access_rounded,
+                  size: 15, color: Colors.orange.shade600),
+              label: Text(
+                'Take Day Off Instead',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.orange.shade600,
                 ),
               ),
             ),
@@ -576,7 +660,7 @@ class _BottomActionBar extends StatelessWidget {
       );
     }
 
-    // Tasks remain — show progress hint + skip option
+    // Tasks remain — show progress hint + Take Day Off.
     return Row(
       children: [
         if (onPreviousDay != null) ...[
@@ -589,17 +673,18 @@ class _BottomActionBar extends StatelessWidget {
         Expanded(
           child: Text(
             'Complete all tasks to advance',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
           ),
         ),
         TextButton.icon(
-          onPressed: onCompleteDay,
-          icon: const Icon(Icons.skip_next, size: 18),
-          label: const Text('Skip to Next Day'),
-          style: TextButton.styleFrom(
-            foregroundColor: cs.onSurfaceVariant,
+          onPressed: onSkipDay,
+          icon: Icon(Icons.beach_access_rounded,
+              size: 16, color: Colors.orange.shade600),
+          label: Text(
+            'Take Day Off',
+            style: TextStyle(color: Colors.orange.shade600),
           ),
         ),
       ],
@@ -709,8 +794,7 @@ class _TaskCard extends StatelessWidget {
                       ),
                     ),
                     child: task.completed
-                        ? const Icon(Icons.check,
-                            size: 15, color: Colors.white)
+                        ? const Icon(Icons.check, size: 15, color: Colors.white)
                         : null,
                   ),
                 ),
@@ -725,7 +809,9 @@ class _TaskCard extends StatelessWidget {
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: color.withAlpha(31),
                               borderRadius: BorderRadius.circular(20),
@@ -762,16 +848,13 @@ class _TaskCard extends StatelessWidget {
                       // Title
                       Text(
                         task.title,
-                        style:
-                            Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  decoration: task.completed
-                                      ? TextDecoration.lineThrough
-                                      : null,
-                                  color: task.completed
-                                      ? cs.onSurfaceVariant
-                                      : null,
-                                ),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          decoration: task.completed
+                              ? TextDecoration.lineThrough
+                              : null,
+                          color: task.completed ? cs.onSurfaceVariant : null,
+                        ),
                       ),
 
                       // Description
@@ -779,11 +862,11 @@ class _TaskCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           task.description,
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: cs.onSurfaceVariant,
-                                    height: 1.4,
-                                  ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: cs.onSurfaceVariant,
+                                height: 1.4,
+                              ),
                         ),
                       ],
                     ],

@@ -59,3 +59,6 @@ python_venvs/
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/app/release.jks
+/android/app/sks.jks
+/android/key.properties

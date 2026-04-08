@@ -7,11 +7,12 @@ import 'migrations/migration_003_roadmap_tables.dart';
 import 'migrations/migration_004_skill_binding.dart';
 import 'migrations/migration_005_day_flow.dart';
 import 'migrations/migration_006_app_settings.dart';
+import 'migrations/migration_007_plan_status.dart';
 
 /// Central database helper with version-based migration runner.
 /// See Part 3.3 of SKILL.md.
 class DatabaseHelper {
-  static const int _dbVersion = 6; // Incremented for migration_006_app_settings
+  static const int _dbVersion = 7; // Incremented for migration_007_plan_status
 
   static Database? _database;
 
@@ -47,6 +48,7 @@ class DatabaseHelper {
       4: Migration004SkillBinding.up,
       5: Migration005DayFlow.up,
       6: Migration006AppSettings.up,
+      7: Migration007PlanStatus.up,
     };
 
     for (int v = from + 1; v <= to; v++) {

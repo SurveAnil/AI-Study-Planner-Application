@@ -58,8 +58,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if (activeSkill != null) {
       roadmap = await svc.getRoadmapForSkill(activeSkill);
       if (roadmap != null) {
-        final lastCompleted = await svc.getLastCompletedDay(activeSkill);
-        resumeDay = lastCompleted + 1;
+        // getNextPendingDay() correctly skips both completed AND skipped days.
+        resumeDay = await svc.getNextPendingDay(activeSkill);
       }
     }
 

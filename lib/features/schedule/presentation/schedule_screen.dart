@@ -45,14 +45,32 @@ class ScheduleScreen extends StatelessWidget {
               final isBreak = blockType == 'break';
               final isAiTask = blockType == 'ai_roadmap';
 
+              final isSkipped = task['status'] == 'skipped';
+              final isCompleted = task['status'] == 'completed';
+
+              Color iconColor;
+              Color bgColor;
+              if (isSkipped) {
+                iconColor = Colors.grey;
+                bgColor = Colors.grey.withAlpha(51);
+              } else if (isCompleted) {
+                iconColor = Colors.green;
+                bgColor = Colors.green.withAlpha(31);
+              } else if (isAiTask) {
+                iconColor = const Color(0xFF6C63FF);
+                bgColor = const Color(0xFF6C63FF).withAlpha(31);
+              } else if (isBreak) {
+                iconColor = Colors.green;
+                bgColor = Colors.green.withValues(alpha: 0.12);
+              } else {
+                iconColor = Theme.of(context).colorScheme.primary;
+                bgColor = Theme.of(context).colorScheme.primaryContainer;
+              }
+
               return ListTile(
                 leading: CircleAvatar(
                   radius: 18,
-                  backgroundColor: isAiTask
-                      ? const Color(0xFF6C63FF).withAlpha(31)
-                      : isBreak
-                          ? Colors.green.withValues(alpha: 0.12)
-                          : Theme.of(context).colorScheme.primaryContainer,
+                  backgroundColor: bgColor,
                   child: Icon(
                     isAiTask
                         ? Icons.auto_awesome
@@ -60,11 +78,7 @@ class ScheduleScreen extends StatelessWidget {
                             ? Icons.coffee_rounded
                             : Icons.book_rounded,
                     size: 18,
-                    color: isAiTask
-                        ? const Color(0xFF6C63FF)
-                        : isBreak
-                            ? Colors.green
-                            : Theme.of(context).colorScheme.primary,
+                    color: iconColor,
                   ),
                 ),
                 title: Row(
@@ -72,7 +86,11 @@ class ScheduleScreen extends StatelessWidget {
                     Expanded(
                       child: Text(
                         task['title'] as String? ?? 'Untitled',
-                        style: const TextStyle(fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          decoration:
+                              isSkipped ? TextDecoration.lineThrough : null,
+                        ),
                       ),
                     ),
                     if (isAiTask)
@@ -104,14 +122,19 @@ class ScheduleScreen extends StatelessWidget {
                 ),
                 trailing: Chip(
                   label: Text(
-                    (task['status'] as String? ?? 'pending').toUpperCase(),
-                    style: const TextStyle(
-                        fontSize: 10, fontWeight: FontWeight.bold),
+                    isSkipped
+                        ? 'SKIPPED'
+                        : (task['status'] as String? ?? 'PENDING').toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: isSkipped ? Colors.grey : null,
+                    ),
                   ),
                   padding: EdgeInsets.zero,
-                  backgroundColor: Theme.of(context)
-                      .colorScheme
-                      .surfaceContainerHighest,
+                  backgroundColor: isSkipped
+                      ? Colors.grey.withAlpha(31)
+                      : Theme.of(context).colorScheme.surfaceContainerHighest,
                 ),
               );
             },

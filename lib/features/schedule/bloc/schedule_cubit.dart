@@ -49,19 +49,21 @@ class ScheduleCubit extends Cubit<ScheduleState> {
         final planJson = planRow['plan_json'] as String?;
         if (planJson == null) continue;
 
+        // Day-level status written by PlanDraftScreen / markDaySkipped().
+        final dayStatus = planRow['status'] as String? ?? 'pending';
+
         final planData =
             json.decode(planJson) as Map<String, dynamic>? ?? {};
         final tasks = planData['tasks'] as List? ?? [];
 
         for (final t in tasks) {
           if (t is Map<String, dynamic>) {
-            final duration = t['duration_minutes'] ?? 30;
             allTasks.add({
               'title': t['title'] ?? 'AI Task',
               'subject': skill,
-              'start_time': '', // AI tasks are fluid
-              'end_time': '$duration min',
-              'status': 'pending',
+              'start_time': '',
+              'end_time': '${t['duration_minutes'] ?? 30} min',
+              'status': dayStatus,   // reflects completed / skipped / pending
               'block_type': 'ai_roadmap',
               'type': t['type'] ?? 'learn',
             });

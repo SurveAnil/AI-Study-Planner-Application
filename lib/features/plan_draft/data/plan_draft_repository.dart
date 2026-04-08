@@ -22,7 +22,7 @@ class PlanDraftRepositoryImpl implements PlanDraftRepository {
       // ✅ FORCE CORRECT BASE URL (NO abstraction confusion)
       final dio = Dio(
         BaseOptions(
-          baseUrl: "http://10.0.2.2:8765",
+          baseUrl: "https://study-planner-app-backend.onrender.com",
           connectTimeout: const Duration(seconds: 10),
           receiveTimeout: const Duration(seconds: 60),
         ),

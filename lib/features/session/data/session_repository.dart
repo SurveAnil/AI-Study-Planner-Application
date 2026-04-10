@@ -5,7 +5,9 @@ import '../../../core/error/failures.dart';
 /// Study session record — written by the timer on EndSession.
 class StudySession {
   final String id;
-  final String taskId;
+  final String? taskId;
+  final String? skill;      // Added for AI Roadmap tracking
+  final int? day;           // Added for AI Roadmap tracking
   final int actualDuration;   // seconds
   final int plannedDuration;  // seconds
   final int pauseCount;
@@ -21,6 +23,8 @@ class StudySession {
   const StudySession({
     required this.id,
     required this.taskId,
+    this.skill,
+    this.day,
     required this.actualDuration,
     required this.plannedDuration,
     this.pauseCount = 0,
@@ -46,6 +50,8 @@ class StudySession {
     return StudySession(
       id: id,
       taskId: taskId,
+      skill: skill,
+      day: day,
       actualDuration: actualDuration ?? this.actualDuration,
       plannedDuration: plannedDuration,
       pauseCount: pauseCount ?? this.pauseCount,
@@ -63,9 +69,14 @@ class StudySession {
 
 /// Abstract session repository.
 abstract class SessionRepository {
-  Future<Either<Failure, StudySession>> startSession(String taskId, int plannedDurationSec);
+  Future<Either<Failure, StudySession>> startSession(
+      String? taskId, int plannedDurationSec, {String? skill, int? day});
+
   Future<Either<Failure, Unit>> endSession(StudySession session);
-  Future<Either<Failure, List<StudySession>>> getSessionsForTask(String taskId);
+
+  Future<Either<Failure, StudySession?>> getLatestSessionForTask(String? taskId);
+
+  Future<Either<Failure, List<StudySession>>> getSessionsForTask(String? taskId);
   Future<Either<Failure, List<StudySession>>> getRecentSessions({int limit = 30});
   Future<Either<Failure, int>> getSessionCount();
 }

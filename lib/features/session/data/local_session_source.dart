@@ -17,7 +17,7 @@ class LocalSessionSource {
   /// Create a new session record when timer starts.
   /// Returns the created session with a new UUID.
   Future<StudySession> createSession(
-      String taskId, int plannedDurationSec) async {
+      String? taskId, int plannedDurationSec, {String? skill, int? day}) async {
     final db = await DatabaseHelper.database;
     final now = DateTime.now().toUtc();
     final id = _uuid.v4();
@@ -25,6 +25,8 @@ class LocalSessionSource {
     final session = StudySession(
       id: id,
       taskId: taskId,
+      skill: skill,
+      day: day,
       actualDuration: 0,
       plannedDuration: plannedDurationSec,
       pauseCount: 0,
@@ -38,6 +40,8 @@ class LocalSessionSource {
     final sessionMap = {
       'id': session.id,
       'task_id': session.taskId,
+      'skill': session.skill,
+      'day': session.day,
       'actual_duration': session.actualDuration,
       'planned_duration': session.plannedDuration,
       'pause_count': session.pauseCount,
@@ -88,7 +92,7 @@ class LocalSessionSource {
   }
 
   /// Get all sessions for a specific task.
-  Future<List<StudySession>> getSessionsForTask(String taskId) async {
+  Future<List<StudySession>> getSessionsForTask(String? taskId) async {
     final db = await DatabaseHelper.database;
     final rows = await db.query(
       'study_sessions',
@@ -125,7 +129,9 @@ class LocalSessionSource {
   StudySession _sessionFromMap(Map<String, dynamic> map) {
     return StudySession(
       id: map['id'] as String,
-      taskId: map['task_id'] as String,
+      taskId: map['task_id'] as String?,
+      skill: map['skill'] as String?,
+      day: map['day'] as int?,
       actualDuration: map['actual_duration'] as int,
       plannedDuration: map['planned_duration'] as int,
       pauseCount: map['pause_count'] as int? ?? 0,

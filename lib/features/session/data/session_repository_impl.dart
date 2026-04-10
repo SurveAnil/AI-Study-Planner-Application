@@ -3,6 +3,7 @@ import 'package:dartz/dartz.dart';
 import '../../../core/error/failures.dart';
 import '../../schedule/data/local_study_plan_source.dart';
 import '../../revision/data/local_revision_source.dart';
+import '../../roadmap/data/roadmap_local_service.dart';
 import 'local_session_source.dart';
 import 'session_repository.dart';
 
@@ -27,12 +28,14 @@ class SessionRepositoryImpl implements SessionRepository {
 
   @override
   Future<Either<Failure, StudySession>> startSession(
-    String taskId,
-    int plannedDurationSec,
-  ) async {
+    String? taskId,
+    int plannedDurationSec, {
+    String? skill,
+    int? day,
+  }) async {
     try {
-      final session =
-          await _sessionSource.createSession(taskId, plannedDurationSec);
+      final session = await _sessionSource.createSession(taskId, plannedDurationSec,
+          skill: skill, day: day);
       return Right(session);
     } catch (e) {
       return Left(DatabaseFailure('Failed to start session: $e'));
@@ -43,22 +46,69 @@ class SessionRepositoryImpl implements SessionRepository {
   Future<Either<Failure, Unit>> endSession(StudySession session) async {
     try {
       // 1. Write the complete study_sessions record
-      //    (actual_duration, focus_score, pause_count, completed=1, ended_at)
       await _sessionSource.endSession(session);
 
-      // 2. Update task status to 'done'
-      await _planSource.updateTaskStatus(session.taskId, 'done');
+      // 2. Update status in appropriate table based on session type
+      if (session.skill != null && session.day != null && session.taskId != null && session.completed) {
+        // AI Roadmap task - mark as completed in task_progress
+        final roadmapSvc = RoadmapLocalService.instance;
+        // We find the index by matching taskId in the daily plan tasks
+        final dailyPlan = await roadmapSvc.getDailyPlan(session.skill!, session.day!);
+        if (dailyPlan != null) {
+          final tasks = dailyPlan['tasks'] as List? ?? [];
+          int index = -1;
+          for (int i = 0; i < tasks.length; i++) {
+            final t = tasks[i];
+            if (t is Map<String, dynamic> && t['task_id'] == session.taskId) {
+              index = i;
+              break;
+            }
+          }
+          if (index != -1) {
+            await roadmapSvc.updateTaskStatus(
+              session.skill!,
+              session.day!,
+              index,
+              session.taskId!,
+              'completed',
+            );
+          }
+        }
+      } else if (session.taskId != null && session.taskId != 'quick-focus' && session.completed) {
+        // Legacy/Manual task marking
+        try {
+          await _planSource.updateTaskStatus(session.taskId!, 'done');
+        } catch (_) {}
+      }
 
-      // 3. Create 4 revision tasks (Day+2, +7, +14, +30)
-      //    Need the task details for topic/subject
-      final task = await _planSource.getTaskById(session.taskId);
-      if (task != null) {
-        await _revisionSource.createRevisionTasks(
-          _userId,
-          task['title'] as String, // topic
-          (task['subject_id'] as String?) ?? 'general',
-          session.endedAt ?? DateTime.now().toUtc(),
-        );
+      // 3. Create revision tasks ONLY if session was completed
+      if (session.completed && session.taskId != null && session.taskId != 'quick-focus') {
+         try {
+            // Find task title for revision record
+            String? title;
+            if (session.skill != null && session.day != null) {
+               final dp = await RoadmapLocalService.instance.getDailyPlan(session.skill!, session.day!);
+               final ts = dp?['tasks'] as List? ?? [];
+               for (var t in ts) {
+                 if (t is Map && t['task_id'] == session.taskId) {
+                   title = t['title'];
+                   break;
+                 }
+               }
+            } else {
+               final task = await _planSource.getTaskById(session.taskId!);
+               title = task?['title'] as String?;
+            }
+
+            if (title != null) {
+              await _revisionSource.createRevisionTasks(
+                _userId,
+                title,
+                session.skill ?? 'general',
+                session.endedAt ?? DateTime.now().toUtc(),
+              );
+            }
+         } catch (_) {}
       }
 
       return const Right(unit);
@@ -68,8 +118,20 @@ class SessionRepositoryImpl implements SessionRepository {
   }
 
   @override
+  Future<Either<Failure, StudySession?>> getLatestSessionForTask(
+    String? taskId,
+  ) async {
+    try {
+      final sessions = await _sessionSource.getSessionsForTask(taskId);
+      return Right(sessions.isNotEmpty ? sessions.first : null);
+    } catch (e) {
+      return Left(DatabaseFailure('Failed to load latest session: $e'));
+    }
+  }
+
+  @override
   Future<Either<Failure, List<StudySession>>> getSessionsForTask(
-    String taskId,
+    String? taskId,
   ) async {
     try {
       final sessions = await _sessionSource.getSessionsForTask(taskId);

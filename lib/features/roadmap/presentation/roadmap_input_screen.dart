@@ -3,9 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../ai_chat/bloc/ai_chat_cubit.dart';
 import '../../ai_chat/bloc/ai_chat_state.dart';
-import '../data/roadmap_local_service.dart';
 import 'roadmap_history_screen.dart';
 import 'roadmap_screen.dart';
+import '../data/roadmap_local_service.dart';
 
 /// Standalone skill-input screen that generates a roadmap.
 ///
@@ -23,19 +23,26 @@ class RoadmapInputScreen extends StatefulWidget {
 
 class _RoadmapInputScreenState extends State<RoadmapInputScreen> {
   final TextEditingController _ctrl = TextEditingController();
+  final TextEditingController _durationCtrl = TextEditingController(text: '90');
   bool _hasTriggeredNav = false; // guard against double navigation
 
   @override
   void dispose() {
     _ctrl.dispose();
+    _durationCtrl.dispose();
     super.dispose();
   }
 
   void _generate() {
     final skill = _ctrl.text.trim();
     if (skill.isEmpty) return;
+    final int durationDays = int.tryParse(_durationCtrl.text.trim()) ?? 90;
+    
+    print("Skill: $skill");
+    print("Duration: $durationDays");
+    
     _hasTriggeredNav = false;
-    context.read<AiChatCubit>().generateRoadmap(skill);
+    context.read<AiChatCubit>().generateRoadmap(skill, durationDays: durationDays);
   }
 
   @override
@@ -47,22 +54,18 @@ class _RoadmapInputScreenState extends State<RoadmapInputScreen> {
         if (state is RoadmapSuccess && !_hasTriggeredNav) {
           _hasTriggeredNav = true;
 
-          final skill =
-              state.roadmap['skill'] as String? ?? _ctrl.text.trim();
-
-          // ── Persist to SQLite ──────────────────────────────────────────
+          final skill = state.roadmap['skill'] as String? ?? _ctrl.text.trim();
+          
+          print("Navigating to RoadmapScreen");
+          
+          // Save roadmap to SQLite (existing logic)
           await RoadmapLocalService.instance.saveRoadmap(skill, state.roadmap);
-          // Set this as the active skill
-          await RoadmapLocalService.instance.setActiveSkill(skill);
-          // Clear stale daily plans from a previous roadmap for this skill
-          await RoadmapLocalService.instance.clearPlansForSkill(skill);
 
           if (!context.mounted) return;
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) =>
-                  RoadmapScreen(skill: skill, roadmap: state.roadmap),
+              builder: (_) => RoadmapScreen(skill: skill),
             ),
           );
         }
@@ -92,7 +95,7 @@ class _RoadmapInputScreenState extends State<RoadmapInputScreen> {
             ],
           ),
           body: SafeArea(
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -144,17 +147,39 @@ class _RoadmapInputScreenState extends State<RoadmapInputScreen> {
                   ),
                   const SizedBox(height: 16),
 
+                  // ── Duration input ────────────────────────────────────────
+                  TextField(
+                    controller: _durationCtrl,
+                    enabled: !isLoading,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: 'Duration (days)',
+                      prefixIcon:
+                          Icon(Icons.timer_outlined, color: cs.primary),
+                      filled: true,
+                      fillColor: cs.surfaceContainerHighest,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
+                    ),
+                    onSubmitted: (_) => _generate(),
+                  ),
+                  const SizedBox(height: 24),
+
                   // ── Generate button ────────────────────────────────────
                   FilledButton.icon(
                     onPressed: isLoading ? null : _generate,
-                    icon: isLoading
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2.5, color: Colors.white),
-                          )
-                        : const Icon(Icons.auto_awesome),
+                      icon: isLoading
+                          ? SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2.5, color: cs.onPrimary),
+                            )
+                          : const Icon(Icons.auto_awesome),
                     label: Text(isLoading
                         ? 'Generating roadmap…'
                         : 'Generate Roadmap'),

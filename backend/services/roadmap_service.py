@@ -10,7 +10,7 @@ _OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 _MODEL = os.getenv("OPENROUTER_MODEL", "mistralai/mistral-nemo")
 
 
-def generate_roadmap(skill: str) -> dict:
+def generate_roadmap(skill: str, duration_days: int = 90) -> dict:
     """
     Generate a structured learning roadmap for the given skill using the LLM.
     Falls back to a mock roadmap if the API key is missing or the call fails.
@@ -19,7 +19,7 @@ def generate_roadmap(skill: str) -> dict:
         print("[Roadmap] No API key — using mock roadmap.")
         return _mock_roadmap(skill)
 
-    prompt = f"""Generate a detailed learning roadmap for: {skill}
+    prompt = f"""Generate a detailed learning roadmap for: {skill} spanning exactly {duration_days} days.
 
 Return ONLY valid raw JSON — no markdown, no code fences, no explanation.
 
@@ -85,7 +85,7 @@ The JSON must follow this exact structure:
             if response.status_code != 200:
                 print(f"[Roadmap] HTTP Error {response.status_code}: {response.text[:200]}")
                 if attempt == 2:
-                    return _mock_roadmap(skill, warning=f"LLM HTTP {response.status_code}")
+                    return _mock_roadmap(skill, duration_days, warning=f"LLM HTTP {response.status_code}")
                 continue
 
             resp_json = response.json()
@@ -108,27 +108,32 @@ The JSON must follow this exact structure:
         except json.JSONDecodeError as e:
             print(f"[Roadmap] JSON parse error (attempt {attempt}): {e}")
             if attempt == 2:
-                return _mock_roadmap(skill, warning="LLM returned invalid JSON after 2 retries.")
+                return _mock_roadmap(skill, duration_days, warning="LLM returned invalid JSON after 2 retries.")
 
         except Exception as e:
             print(f"[Roadmap Error] {type(e).__name__}: {e}")
-            return _mock_roadmap(skill, warning=f"LLM Error: {str(e)[:80]}")
+            return _mock_roadmap(skill, duration_days, warning=f"LLM Error: {str(e)[:80]}")
 
-    return _mock_roadmap(skill)
+    return _mock_roadmap(skill, duration_days)
 
 
-def _mock_roadmap(skill: str, warning: str = "") -> dict:
+def _mock_roadmap(skill: str, duration_days: int = 30, warning: str = "") -> dict:
     """Offline fallback roadmap — always returns valid structure."""
+    # Proportional scaling for mock stages
+    s1 = int(duration_days * 0.25)
+    s2 = int(duration_days * 0.45)
+    s3 = duration_days - s1 - s2
+
     mock = {
         "skill": skill,
-        "overview": f"A structured 30-day roadmap to become proficient in {skill}.",
-        "total_duration_days": 30,
+        "overview": f"A structured {duration_days}-day roadmap to become proficient in {skill}.",
+        "total_duration_days": duration_days,
         "_warning": warning or "Offline mock roadmap (API unavailable).",
         "stages": [
             {
                 "title": "Foundation",
                 "description": "Core fundamentals and environment setup",
-                "duration_days": 7,
+                "duration_days": s1,
                 "topics": [
                     {
                         "name": "Basics",
@@ -150,7 +155,7 @@ def _mock_roadmap(skill: str, warning: str = "") -> dict:
             {
                 "title": "Intermediate",
                 "description": "Core concepts and small projects",
-                "duration_days": 14,
+                "duration_days": s2,
                 "topics": [
                     {
                         "name": "Core Concepts",
@@ -172,7 +177,7 @@ def _mock_roadmap(skill: str, warning: str = "") -> dict:
             {
                 "title": "Advanced",
                 "description": "Real-world application and portfolio project",
-                "duration_days": 9,
+                "duration_days": s3,
                 "topics": [
                     {
                         "name": "Advanced Topics",

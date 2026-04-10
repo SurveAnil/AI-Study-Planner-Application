@@ -36,14 +36,14 @@ class AiChatCubit extends Cubit<AiChatState> {
   }
 
   /// Phase 1 — Generate a structured roadmap for [skill].
-  Future<void> generateRoadmap(String skill) async {
+  Future<void> generateRoadmap(String skill, {int durationDays = 90}) async {
     if (skill.trim().isEmpty) return;
 
     emit(AiChatLoading());
-    debugPrint('[Roadmap] Generating roadmap for: $skill');
+    debugPrint('[Roadmap] Generating roadmap for: $skill (Duration: $durationDays days)');
 
     try {
-      final result = await _repository.generateRoadmap(skill);
+      final result = await _repository.generateRoadmap(skill, durationDays: durationDays);
 
       result.fold(
         (failure) {

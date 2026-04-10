@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -112,17 +110,6 @@ class _RoadmapHistoryScreenState extends State<RoadmapHistoryScreen> {
 
   void _openRoadmap(Map<String, dynamic> row) async {
     final skill = row['skill'] as String? ?? 'Unknown';
-    Map<String, dynamic> decoded;
-    try {
-      decoded =
-          json.decode(row['roadmap_json'] as String) as Map<String, dynamic>;
-    } catch (_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not decode roadmap data.')),
-      );
-      return;
-    }
-
     // Set this as the active skill
     await RoadmapLocalService.instance.setActiveSkill(skill);
 
@@ -131,7 +118,7 @@ class _RoadmapHistoryScreenState extends State<RoadmapHistoryScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => RoadmapScreen(skill: skill, roadmap: decoded),
+        builder: (_) => RoadmapScreen(skill: skill),
       ),
     );
   }

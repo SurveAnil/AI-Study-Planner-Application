@@ -160,9 +160,10 @@ class _ManualPlanFormScreenState extends State<ManualPlanFormScreen> {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.space4),
-        children: [
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(AppSpacing.space4),
+          children: [
           // ── Date ──────────────────────────────────────────────────────
           _SectionLabel('Plan Date'),
           const SizedBox(height: AppSpacing.space2),
@@ -302,6 +303,7 @@ class _ManualPlanFormScreenState extends State<ManualPlanFormScreen> {
 
           const SizedBox(height: AppSpacing.space16),
         ],
+        ),
       ),
     );
   }

@@ -24,11 +24,12 @@ def health_check():
 
 class RoadmapRequest(BaseModel):
     skill: str
+    duration_days: int = 90
 
 @app.post("/roadmap/generate")
 def roadmap_generate_endpoint(req: RoadmapRequest):
     """Generate a structured learning roadmap for a given skill using the LLM."""
-    return generate_roadmap(req.skill)
+    return generate_roadmap(req.skill, duration_days=req.duration_days)
 
 # ─── Phase 1.2: Daily Plan Generation ───────────────────────────────────────
 

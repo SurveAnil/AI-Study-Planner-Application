@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:crypto/crypto.dart';
+import 'package:sqflite/sqflite.dart';
 
 import '../../../core/database/database_helper.dart';
 
@@ -21,7 +24,7 @@ class RoadmapLocalService {
 
   /// Inserts a new roadmap row.  Multiple roadmaps are kept (one per skill
   /// generation).  [skill] is stored both as a column and inside [roadmap].
-  Future<void> saveRoadmap(String skill, Map<String, dynamic> roadmap) async {
+  Future<void> saveRoadmap(String skill, Map<String, dynamic> roadmap, {String? startDate}) async {
     final db = await DatabaseHelper.database;
     final now = DateTime.now().millisecondsSinceEpoch;
 
@@ -29,6 +32,7 @@ class RoadmapLocalService {
       'skill': skill,
       'roadmap_json': json.encode(roadmap),
       'created_at': now,
+      'start_date': startDate,
     });
     
     print("Roadmap saved successfully to roadmap_cache");
@@ -44,8 +48,10 @@ class RoadmapLocalService {
     );
     if (rows.isEmpty) return null;
     try {
-      final decoded = json.decode(rows.first['roadmap_json'] as String)
-          as Map<String, dynamic>;
+      final source = rows.first['roadmap_json'] as String;
+      final decoded = await compute(_decodeMap, source);
+      if (decoded == null) return null;
+      
       // Inject the skill column so callers always have it
       decoded['skill'] ??= rows.first['skill'];
       return decoded;
@@ -73,6 +79,93 @@ class RoadmapLocalService {
     await db.delete('day_completion', where: 'skill = ?', whereArgs: [skill]);
   }
 
+  // ── Learning State ────────────────────────────────────────────────────────
+
+  Future<void> initLearningState(String skill, String startDate, int dailyHours) async {
+    final db = await DatabaseHelper.database;
+    await db.insert(
+      'user_learning_state',
+      {
+        'skill': skill,
+        'start_date': startDate,
+        'current_day': 1,
+        'last_active_date': startDate,
+        'daily_hours': dailyHours,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<Map<String, dynamic>?> getLearningState(String skill) async {
+    final db = await DatabaseHelper.database;
+    final rows = await db.query(
+      'user_learning_state',
+      where: 'skill = ?',
+      whereArgs: [skill],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return rows.first;
+  }
+
+  Future<bool> progressDayIfNeeded(String skill) async {
+    final state = await getLearningState(skill);
+    if (state == null) return false;
+
+    final startDateStr = state['start_date'] as String;
+    final lastActiveStr = state['last_active_date'] as String;
+    final currentDay = state['current_day'] as int;
+
+    final today = DateTime.now();
+    final todayStr = today.toIso8601String().split('T')[0];
+    final todayDate = DateTime.parse(todayStr);
+    final startDate = DateTime.parse(startDateStr);
+    
+    if (startDate.isAfter(todayDate)) {
+      // Future start date handling: Keep current_day=1
+      return false;
+    }
+
+    final lastActiveDate = DateTime.parse(lastActiveStr);
+
+    if (todayDate.isBefore(lastActiveDate)) {
+      debugPrint("System time anomaly detected: Time moved backward");
+      return true; // time_anomaly = true
+    }
+
+    if (todayDate.isAfter(lastActiveDate)) {
+      final daysPassed = todayDate.difference(lastActiveDate).inDays;
+      if (daysPassed > 0) {
+        final db = await DatabaseHelper.database;
+        await db.update(
+          'user_learning_state',
+          {
+            'current_day': currentDay + daysPassed,
+            'last_active_date': todayStr,
+          },
+          where: 'skill = ?',
+          whereArgs: [skill],
+        );
+      }
+    }
+    return false; // time_anomaly = false
+  }
+
+  /// Manually updates the current_day for [skill].
+  Future<void> updateCurrentDay(String skill, int newDay) async {
+    final db = await DatabaseHelper.database;
+    final todayStr = DateTime.now().toIso8601String().split('T')[0];
+    await db.update(
+      'user_learning_state',
+      {
+        'current_day': newDay,
+        'last_active_date': todayStr,
+      },
+      where: 'skill = ?',
+      whereArgs: [skill],
+    );
+  }
+
   // ── Daily Plan ────────────────────────────────────────────────────────────
 
   /// Saves a daily plan for [skill]/[day].  Replaces any existing row for the
@@ -87,6 +180,8 @@ class RoadmapLocalService {
     Map<String, dynamic> planData, {
     String? date,
     int stageIndex = 0,
+    String? generationStatus,
+    int isPreGenerated = 0,
   }) async {
     final db = await DatabaseHelper.database;
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -105,6 +200,8 @@ class RoadmapLocalService {
       'created_at': now,
       'date': date,
       'stage_index': stageIndex,
+      'generation_status': generationStatus,
+      'is_pre_generated': isPreGenerated,
     });
   }
 
@@ -119,8 +216,40 @@ class RoadmapLocalService {
     );
     if (rows.isEmpty) return null;
     try {
-      return json.decode(rows.first['plan_json'] as String)
-          as Map<String, dynamic>;
+      final source = rows.first['plan_json'] as String;
+      final decodedMap = await compute(_decodeMap, source);
+      if (decodedMap != null) {
+        decodedMap['generation_status'] = rows.first['generation_status'];
+        decodedMap['is_pre_generated'] = rows.first['is_pre_generated'];
+        decodedMap['status'] = rows.first['status'];
+
+        // --- Migration: Assign task_position and task_id ---
+        bool migrated = false;
+        final tasks = decodedMap['tasks'] as List? ?? [];
+        for (int i = 0; i < tasks.length; i++) {
+          final t = tasks[i];
+          if (t is Map<String, dynamic>) {
+            if (!t.containsKey('task_position') || !t.containsKey('task_id')) {
+              t['task_position'] = i;
+              final title = t['title'] ?? 'untitled';
+              final type = t['type'] ?? 'learn';
+              t['task_id'] = generateTaskId(title, type, day, i);
+              migrated = true;
+            }
+          }
+        }
+
+        if (migrated) {
+          // Update silently
+          await db.update(
+            'daily_plan_cache',
+            {'plan_json': json.encode(decodedMap)},
+            where: 'skill = ? AND day = ?',
+            whereArgs: [skill, day],
+          );
+        }
+      }
+      return decodedMap;
     } catch (_) {
       return null;
     }
@@ -138,19 +267,65 @@ class RoadmapLocalService {
     );
   }
 
+  /// Marks a specific day's plan as finalized so it can be executed.
+  Future<void> finalizePlan(String skill, int day) async {
+    final db = await DatabaseHelper.database;
+    await db.update(
+      'daily_plan_cache',
+      {'status': 'finalized'},
+      where: 'skill = ? AND day = ?',
+      whereArgs: [skill, day],
+    );
+  }
+
+  /// Checks if a day's plan has been finalized.
+  Future<bool> isPlanFinalized(String skill, int day) async {
+    final db = await DatabaseHelper.database;
+    final rows = await db.query(
+      'daily_plan_cache',
+      columns: ['status'],
+      where: 'skill = ? AND day = ?',
+      whereArgs: [skill, day],
+      limit: 1,
+    );
+    if (rows.isEmpty) return false;
+    final status = rows.first['status'] as String?;
+    return status == 'finalized' || status == 'completed' || status == 'skipped';
+  }
+
+  // ── Smart Scheduling ──────────────────────────────────────────────────────
+
+  /// Centralized date calculation string (yyyy-MM-dd)
+  String calculateDate(String startDateStr, int dayNumber) {
+    if (startDateStr.isEmpty) return '';
+    try {
+      final start = DateTime.parse(startDateStr);
+      final target = start.add(Duration(days: dayNumber - 1));
+      return target.toIso8601String().split('T')[0];
+    } catch (_) {
+      return '';
+    }
+  }
+
   // ── Task Progress ─────────────────────────────────────────────────────────
+
+  static String generateTaskId(String title, String type, int day, int position) {
+    if (title.isEmpty) title = 'untitled';
+    if (type.isEmpty) type = 'learn';
+    final bytes = utf8.encode('$title$type$day$position');
+    return md5.convert(bytes).toString();
+  }
 
   /// Updates (or inserts) the completion status for a specific task.
   /// [status] should be `"pending"` or `"completed"`.
   Future<void> updateTaskStatus(
-      String skill, int day, int index, String status) async {
+      String skill, int day, int index, String taskId, String status) async {
     final db = await DatabaseHelper.database;
 
-    // Check if row exists
     final existing = await db.query(
       'task_progress',
-      where: 'skill = ? AND day = ? AND task_index = ?',
-      whereArgs: [skill, day, index],
+      where: 'skill = ? AND day = ? AND task_id = ?',
+      whereArgs: [skill, day, taskId],
       limit: 1,
     );
 
@@ -158,31 +333,62 @@ class RoadmapLocalService {
       await db.update(
         'task_progress',
         {'status': status},
-        where: 'skill = ? AND day = ? AND task_index = ?',
-        whereArgs: [skill, day, index],
+        where: 'id = ?',
+        whereArgs: [existing.first['id']],
       );
     } else {
-      await db.insert('task_progress', {
-        'skill': skill,
-        'day': day,
-        'task_index': index,
-        'status': status,
-      });
+      // Safe Migration check
+      final oldRows = await db.query(
+          'task_progress',
+          where: 'skill = ? AND day = ? AND task_index = ?',
+          whereArgs: [skill, day, index],
+          limit: 1);
+      if (oldRows.isNotEmpty) {
+        await db.update(
+          'task_progress',
+          {'status': status, 'task_id': taskId},
+          where: 'id = ?',
+          whereArgs: [oldRows.first['id']],
+        );
+      } else {
+        await db.insert('task_progress', {
+          'skill': skill,
+          'day': day,
+          'task_index': index,
+          'task_id': taskId,
+          'status': status,
+        });
+      }
     }
   }
 
   /// Returns the saved status for a specific task, or null if not tracked.
-  Future<String?> getTaskStatus(String skill, int day, int index) async {
+  Future<String?> getTaskStatus(String skill, int day, int index, String taskId) async {
     final db = await DatabaseHelper.database;
     final rows = await db.query(
       'task_progress',
-      columns: ['status'],
+      columns: ['id', 'status'],
+      where: 'skill = ? AND day = ? AND task_id = ?',
+      whereArgs: [skill, day, taskId],
+      limit: 1,
+    );
+    if (rows.isNotEmpty) return rows.first['status'] as String?;
+
+    // Safe migration check
+    final oldRows = await db.query(
+      'task_progress',
+      columns: ['id', 'status'],
       where: 'skill = ? AND day = ? AND task_index = ?',
       whereArgs: [skill, day, index],
       limit: 1,
     );
-    if (rows.isEmpty) return null;
-    return rows.first['status'] as String?;
+    if (oldRows.isNotEmpty) {
+      // update silently
+      await db.update('task_progress', {'task_id': taskId},
+          where: 'id = ?', whereArgs: [oldRows.first['id']]);
+      return oldRows.first['status'] as String?;
+    }
+    return null;
   }
 
   // ── Day Completion ────────────────────────────────────────────────────────
@@ -371,3 +577,11 @@ class RoadmapLocalService {
   }
 }
 
+// Top-level function for background isolate parsing
+Map<String, dynamic>? _decodeMap(String source) {
+  try {
+    return json.decode(source) as Map<String, dynamic>;
+  } catch (_) {
+    return null;
+  }
+}

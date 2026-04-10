@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../plan_draft/presentation/plan_draft_screen.dart';
 import 'roadmap_history_screen.dart';
-import 'roadmap_input_screen.dart';
+import 'learning_setup_screen.dart';
+import '../data/roadmap_local_service.dart';
 
 /// RoadmapScreen — Phase 1.6
 /// Receives the roadmap [Map] and renders stage cards with topics, tools and
-/// projects.  Each stage has its own "Start Stage" button that navigates to
-/// PlanDraftScreen with the corresponding stageIndex.
+/// projects. Global "Start Learning" button navigates to LearningSetupScreen.
 class RoadmapScreen extends StatefulWidget {
   final String skill;
-  final Map<String, dynamic> roadmap;
 
-  const RoadmapScreen({super.key, required this.skill, required this.roadmap});
+  const RoadmapScreen({super.key, required this.skill});
 
   @override
   State<RoadmapScreen> createState() => _RoadmapScreenState();
@@ -22,20 +20,57 @@ class _RoadmapScreenState extends State<RoadmapScreen>
   late AnimationController _fadeCtrl;
   late Animation<double> _fadeAnim;
 
+  Map<String, dynamic>? _roadmap;
+  bool _loading = true;
+  String? _error;
+
   // Track which stage cards are expanded
-  late List<bool> _expanded;
+  List<bool> _expanded = [];
 
   @override
   void initState() {
     super.initState();
-    final stages = widget.roadmap['stages'] as List? ?? [];
-    _expanded = List.generate(stages.length, (i) => i == 0); // first open
-
     _fadeCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
-    )..forward();
+    );
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
+    
+    _loadRoadmap();
+  }
+
+  Future<void> _loadRoadmap() async {
+    print("Fetching roadmap from DB");
+    try {
+      final data = await RoadmapLocalService.instance.getRoadmapForSkill(widget.skill);
+      if (data != null) {
+        final stages = data['stages'] as List? ?? [];
+        print("Stages count: ${stages.length}");
+        
+        if (mounted) {
+          setState(() {
+            _roadmap = data;
+            _expanded = List.generate(stages.length, (i) => i == 0);
+            _loading = false;
+          });
+          _fadeCtrl.forward();
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _error = "Roadmap not found in database.";
+            _loading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = "Error loading roadmap: $e";
+          _loading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -50,8 +85,19 @@ class _RoadmapScreenState extends State<RoadmapScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    
+    if (_error != null || _roadmap == null) {
+      return Scaffold(
+        appBar: AppBar(title: Text(widget.skill)),
+        body: Center(child: Text(_error ?? "Unknown error")),
+      );
+    }
+
     final cs = Theme.of(context).colorScheme;
-    final roadmap = widget.roadmap;
+    final roadmap = _roadmap!;
     final stages = roadmap['stages'] as List? ?? [];
     final skill = widget.skill;
     final overview = roadmap['overview'] as String? ?? '';
@@ -185,18 +231,6 @@ class _RoadmapScreenState extends State<RoadmapScreen>
                       isExpanded: _expanded[index],
                       onToggle: () => setState(
                           () => _expanded[index] = !_expanded[index]),
-                      onStartStage: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => PlanDraftScreen(
-                              skill: widget.skill,
-                              roadmap: widget.roadmap,
-                              stageIndex: index,
-                            ),
-                          ),
-                        );
-                      },
                     ),
                   );
                 },
@@ -209,28 +243,38 @@ class _RoadmapScreenState extends State<RoadmapScreen>
               child: Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const RoadmapInputScreen(),
+                child: Column(
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => LearningSetupScreen(
+                                skill: widget.skill,
+                                roadmap: _roadmap!,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.rocket_launch, size: 20),
+                        label: const Text('Start Learning'),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
                       ),
-                    );
-                  },
-                  icon: const Icon(Icons.add_circle_outline),
-                  label: const Text('Generate New Roadmap'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 40)),
+        const SliverToBoxAdapter(child: SizedBox(height: 40)),
           ],
         ),
       ),
@@ -348,14 +392,12 @@ class _StageCard extends StatelessWidget {
   final int index;
   final bool isExpanded;
   final VoidCallback onToggle;
-  final VoidCallback onStartStage;
 
   const _StageCard({
     required this.stage,
     required this.index,
     required this.isExpanded,
     required this.onToggle,
-    required this.onStartStage,
   });
 
   static const List<Color> _stageColors = [
@@ -519,25 +561,6 @@ class _StageCard extends StatelessWidget {
                       );
                     }),
                   ],
-
-                  // ─── Start Stage Button ──────────────────────────────
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: onStartStage,
-                      icon: const Icon(Icons.play_arrow, size: 20),
-                      label: const Text('Start Stage'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: color,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),

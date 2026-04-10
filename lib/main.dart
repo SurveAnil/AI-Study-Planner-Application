@@ -41,7 +41,7 @@ class StudyPlannerApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => di.sl<PlanDraftBloc>()),
-        BlocProvider(create: (_) => di.sl<ScheduleCubit>()..loadDay(DateTime.now())),
+        BlocProvider(create: (_) => di.sl<ScheduleCubit>()..loadCurrentDay()),
         BlocProvider(create: (_) => di.sl<SessionBloc>(param1: _testUserId)),
         BlocProvider(create: (_) => di.sl<PredictionCubit>(param1: _testUserId)),
         BlocProvider(create: (_) => di.sl<SubjectAnalyticsCubit>(param1: _testUserId)),

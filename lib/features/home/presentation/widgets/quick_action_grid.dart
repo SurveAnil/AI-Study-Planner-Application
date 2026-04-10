@@ -94,7 +94,7 @@ class QuickActionGrid extends StatelessWidget {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => RoadmapScreen(skill: skill, roadmap: roadmap!),
+          builder: (_) => RoadmapScreen(skill: skill),
         ),
       );
     } else if (context.mounted) {

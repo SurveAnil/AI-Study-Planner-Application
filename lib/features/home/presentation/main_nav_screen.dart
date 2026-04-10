@@ -4,7 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../core/constants/app_colors.dart';
 
 import '../../schedule/presentation/schedule_screen.dart';
-import 'home_screen.dart';
+import 'package:ai_study_planner/features/home/presentation/home_screen.dart';
 
 /// The root scaffold for the application, providing bottom navigation.
 ///

@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_spacing.dart';
 import '../../../features/roadmap/data/roadmap_local_service.dart';
-import '../../../features/plan_draft/presentation/plan_draft_screen.dart';
+import '../../../features/plan_draft/presentation/day_plan_editor_screen.dart';
 import '../../ai_chat/presentation/ai_chat_screen.dart';
 import 'widgets/greeting_card.dart';
 import 'widgets/quick_stats_row.dart';
 import 'widgets/quick_action_grid.dart';
 import 'widgets/ai_banner.dart';
+import 'package:ai_study_planner/features/home/presentation/main_nav_screen.dart';
 
 /// Screen S03: Home Dashboard
 ///
@@ -261,16 +262,12 @@ class _ContinueLearningCard extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: () {
-            final skill = roadmap['skill'] as String? ?? 'Unknown';
-            Navigator.push(
+            Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(
-                builder: (_) => PlanDraftScreen(
-                  skill: skill,
-                  roadmap: roadmap,
-                  initialDay: resumeDay,
-                ),
+                builder: (_) => MainNavScreen(initialIndex: 1),
               ),
+              (route) => false,
             );
           },
           child: Padding(

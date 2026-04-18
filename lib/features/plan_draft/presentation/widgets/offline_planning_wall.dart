@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../bloc/plan_draft_bloc.dart';
 import '../../bloc/plan_draft_event.dart';
@@ -71,7 +70,7 @@ class _OfflinePlanningWallState extends State<OfflinePlanningWall> {
             "AI Plan Generation needs an internet connection to build your personalized study plan.",
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: AppColors.onSurfaceVariant,
+              color: colors.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: AppSpacing.space8),

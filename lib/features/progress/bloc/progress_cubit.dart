@@ -2,38 +2,39 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../data/progress_repository.dart';
+import '../domain/entities/progress_report.dart';
 
 // ─── State ──────────────────────────────────────────────────────────────
 
 class ProgressState extends Equatable {
   final ProgressReport? report;
-  final String period; // 'week' | 'month'
+  final String? skill;
   final bool isLoading;
   final String? errorMessage;
 
   const ProgressState({
     this.report,
-    this.period = 'week',
+    this.skill,
     this.isLoading = false,
     this.errorMessage,
   });
 
   ProgressState copyWith({
     ProgressReport? report,
-    String? period,
+    String? skill,
     bool? isLoading,
     String? errorMessage,
   }) {
     return ProgressState(
       report: report ?? this.report,
-      period: period ?? this.period,
+      skill: skill ?? this.skill,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
     );
   }
 
   @override
-  List<Object?> get props => [report, period, isLoading, errorMessage];
+  List<Object?> get props => [report, skill, isLoading, errorMessage];
 }
 
 // ─── Cubit ──────────────────────────────────────────────────────────────
@@ -45,10 +46,11 @@ class ProgressCubit extends Cubit<ProgressState> {
       : _repository = repository,
         super(const ProgressState());
 
-  Future<void> loadReport(String period) async {
-    emit(state.copyWith(isLoading: true, period: period));
+  /// Loads the intelligence report for a specific skill.
+  Future<void> loadSkillReport(String skill) async {
+    emit(state.copyWith(isLoading: true, skill: skill, errorMessage: null));
 
-    final result = await _repository.loadReport(period);
+    final result = await _repository.loadSkillReport(skill);
     result.fold(
       (failure) => emit(state.copyWith(
         isLoading: false,
@@ -57,7 +59,6 @@ class ProgressCubit extends Cubit<ProgressState> {
       (report) => emit(state.copyWith(
         report: report,
         isLoading: false,
-        errorMessage: null,
       )),
     );
   }

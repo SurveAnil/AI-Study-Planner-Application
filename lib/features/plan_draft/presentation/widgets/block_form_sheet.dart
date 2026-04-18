@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../models/draft_models.dart';
 
@@ -185,7 +184,7 @@ class _BlockFormSheetState extends State<BlockFormSheet> {
                 const SizedBox(height: AppSpacing.space4),
 
                 // Type chips
-                Text('Type', style: tt.labelLarge?.copyWith(color: AppColors.onSurfaceVariant)),
+                Text('Type', style: tt.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: AppSpacing.space2),
                 Wrap(
                   spacing: AppSpacing.space2,
@@ -193,8 +192,8 @@ class _BlockFormSheetState extends State<BlockFormSheet> {
                     label: Text(t[0].toUpperCase() + t.substring(1)),
                     selected: _type == t,
                     onSelected: (_) => setState(() => _type = t),
-                    selectedColor: AppColors.primaryContainer,
-                    checkmarkColor: AppColors.primary,
+                    selectedColor: cs.primaryContainer,
+                    checkmarkColor: cs.primary,
                   )).toList(),
                 ),
                 const SizedBox(height: AppSpacing.space4),
@@ -274,17 +273,17 @@ class _TimePickerTile extends StatelessWidget {
           vertical: AppSpacing.space3,
         ),
         decoration: BoxDecoration(
-          color: AppColors.surfaceVariant,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
         ),
         child: Row(
           children: [
-            Icon(Icons.access_time, size: 16, color: AppColors.onSurfaceVariant),
+            Icon(Icons.access_time, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
             const SizedBox(width: AppSpacing.space2),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.onSurfaceVariant)),
+                Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 Text(
                   time != null ? _fmt(time!) : '--:--',
                   style: Theme.of(context).textTheme.titleSmall,

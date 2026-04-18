@@ -25,7 +25,6 @@ Students currently juggle 3–4 separate tools: an AI chatbot for plan generatio
 3. Auto-schedules spaced repetition revision at Day+2/7/14/30 after every completed session
 4. Tracks consistency, focus quality, and completion rates
 5. Predicts exam performance using Linear Regression and surfaces weak subjects using K-Means Clustering
-6. Attaches PDFs, slides, and video links to tasks so students never leave the app during a session
 
 ### 1.2 Tech Stack
 
@@ -63,8 +62,6 @@ Students currently juggle 3–4 separate tools: an AI chatbot for plan generatio
 2. Session length = 45 min (configurable in Settings: 30/45/60 min). If available time < 45 min but >= 15 min → use Quick Review mode (10/15/20 min micro-blocks)
 3. Create study block → insert 15-min break → check `remaining_time > 0` before each subsequent append
 4. Assign subjects to blocks by priority weight. If `subject_count == 1`, skip weighting (avoids `ZeroDivisionError`)
-5. Attach `resource_link` if subject has an associated resource
-
 **Output:** `{ plan_id, blocks: [{ start, end, subject, type: study|break|practice|review }], warnings[] }`
 
 **Debounce rule:** Ignore repeated `GeneratePlanEvent` taps while `PlanLoading` state is active. Never spawn concurrent Python calls.
@@ -211,7 +208,6 @@ CREATE TABLE tasks (
   end_time         TEXT NOT NULL,       -- HH:MM 24h
   planned_duration INTEGER NOT NULL,    -- minutes
   status           TEXT DEFAULT 'pending', -- pending | in_progress | done | skipped
-  resource_link    TEXT,
   priority         INTEGER DEFAULT 2,   -- 1=High  2=Medium  3=Low
   created_at       TEXT NOT NULL,
   updated_at       TEXT NOT NULL,
@@ -349,7 +345,6 @@ class DatabaseHelper {
 | `ProgressCubit` | Cubit | `loadReport(period)`, `selectSubject(id)` | `ProgressState { consistency, charts, trend }` | S08 |
 | `SubjectAnalyticsCubit` | Cubit | `loadSubject(id)` | `AnalyticsState { cluster, metrics, history }` | S09 |
 | `PredictionCubit` | Cubit | `runPrediction()`, `adjustInput(feature, delta)` | `PredictionState { scores, confidence, whatIf }` | S12 |
-| `ResourcesCubit` | Cubit | `loadAll()`, `filter(type)`, `addResource(file)` | `ResourcesState { files, activeFilter }` | S10 |
 | `SettingsCubit` | Cubit | `updateGoal(h)`, `toggleDarkMode()`, `toggleAI(feature)` | `SettingsState { prefs, aiFlags }` | S11 |
 | `AuthCubit` | Cubit | `setupProfile(data)`, `loadProfile()` | `ProfileState { user, isSetup }` | S02 |
 
@@ -425,7 +420,6 @@ lib/
     session/         ← same structure
     progress/        ← same structure
     revision/
-    resources/
     settings/
     auth/
   core/
@@ -687,8 +681,7 @@ Bottom Navigation Bar (5 tabs):
   Tab 1 — Home (S03)
   Tab 2 — Schedule (S05)
   Tab 3 — Progress (S08)
-  Tab 4 — Resources (S10)
-  Tab 5 — Settings (S11)
+  Tab 4 — Settings (S11)
 
 First-launch flow: S01 → S02 → S03
 
@@ -715,10 +708,10 @@ Zones: Greeting card (name, date, streak 🔥) → Quick stats row (today's hour
 Natural language input field (labelled "Powered by local AI model") OR toggle to structured form. Structured form: date picker, time range pickers (From/To), subject multi-select chips, priority dropdown per subject, optional goal text field. "Generate Plan ✨" button → loading spinner while FastAPI runs. Generated plan preview: colored time-block cards (study=indigo, break=grey, practice=amber, review=teal), each editable. Action row: "Regenerate" (outline) + "Save Plan" (filled). Save → writes `STUDY_PLANS` + `TASKS` → S05.
 
 **S05 — Today's Schedule** *(Tab 2)*
-Top bar: date label + left/right day navigation + "Add Task" icon. Circular progress ring (X/N done, hours studied). Vertical timeline task list — each card: time range (left) | subject chip + topic + resource icon (center) | status badge + Start▶/timer MM:SS/✓ (right). Break cards: lighter background, coffee icon, not interactive. Empty state: illustration + "No plan yet" + "Generate Plan" CTA.
+Vertical timeline task list — each card: time range (left) | subject chip + topic (center) | status badge + Start▶/timer MM:SS/✓ (right). Break cards: lighter background, coffee icon, not interactive. Empty state: illustration + "No plan yet" + "Generate Plan" CTA.
 
 **S06 — Active Study Session** *(launched from S05 Start button)*
-Full-screen distraction-free mode. Minimal top bar (subject label only). Large MM:SS countdown timer with circular progress arc + elapsed time below. 3 timer controls: Pause | End Session | +5 min extend. Collapsible resource panel (bottom sheet — PDFs, links, PPTs for this task, openable without leaving screen). Focus Score building indicator. On completion: confetti animation + "Session Complete!" + "Mark Done ✓" | "Add 10 min" | "Skip for Now".
+Full-screen distraction-free mode. Minimal top bar (subject label only). Large MM:SS countdown timer with circular progress arc + elapsed time below. 3 timer controls: Pause | End Session | +5 min extend. Focus Score building indicator. On completion: confetti animation + "Session Complete!" + "Mark Done ✓" | "Add 10 min" | "Skip for Now".
 
 **Critical data writes on EndSession:**
 ```
@@ -735,9 +728,6 @@ Week/Month toggle. Consistency Score gauge + gamification level + 🔥 streak ba
 
 **S09 — Subject Analytics** *(from S08 subject tap)*
 Top bar shows subject name. STRONG/MODERATE/WEAK badge (K-Means output, color-coded). Key metrics row: Total hours | Avg practice score | Revision count. Score history line chart (last 5–10 sessions). Revision log timeline (date, score, type, pass/needs-work color). AI Recommendation card (e.g. "Study DBMS 4h/week for better results" + "Schedule More Sessions" CTA).
-
-**S10 — Resources** *(Tab 4)*
-Search bar + filter chips (All | PDF | Video | PPT | Practice Sets). 2-column card grid: file type icon + name + subject + date. FAB (+) → bottom sheet: Upload PDF | Paste Link | Import from Files. Long-press → context menu: Delete | Move to Subject | Share. Empty state with CTA.
 
 **S11 — Settings** *(Tab 5)*
 Section 1 — Profile (avatar, name, Edit button → S02). Section 2 — Study Preferences (daily goal stepper, session length 30/45/60 min, break duration 5/10/15 min, study window time picker). Section 3 — Notifications (daily reminder toggle + time, revision alerts, weekly report summary). Section 4 — AI Settings (NLP input toggle, performance prediction toggle, weak subject detection toggle, note: "AI runs locally. No data sent online."). Section 5 — Data (export CSV, clear all data in red, app version).

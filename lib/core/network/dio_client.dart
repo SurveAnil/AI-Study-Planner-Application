@@ -7,6 +7,11 @@ class DioClient {
   late final Dio dio;
 
   String getBaseUrl() {
+    // Phase 2: Use local backend to see subtasks, resources, and adaptivity!
+    // For Android Emulator: "http://10.0.2.2:8765"
+    // For iOS/Physical Device: your computer's LAN IP (e.g. "http://192.168.1.5:8765")
+    // return "http://10.0.2.2:8765"; 
+    
     return "https://study-planner-app-backend.onrender.com";
   }
 

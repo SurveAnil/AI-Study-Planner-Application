@@ -247,6 +247,9 @@ class _ExampleChips extends StatelessWidget {
     'Web Design',
     'Data Structures',
     'Python for AI',
+    'Cyber Security',
+    'DBMS',
+    'Java'
   ];
 
   @override

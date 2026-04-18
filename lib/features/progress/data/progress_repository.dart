@@ -1,20 +1,15 @@
 import 'package:dartz/dartz.dart';
+import '../../../../core/error/failures.dart';
+import '../domain/entities/progress_report.dart';
 
-import '../../../core/error/failures.dart';
-
-/// Performance data record — user-entered practice/test scores.
+/// Legacy model for performance scores (Optional cleanup later)
 class PerformanceData {
   final String id;
   final String userId;
   final String subject;
-  final int? practiceScore; // 0–100
-  final int? testScore;     // 0–100
-  final int sessionCount;
+  final int? practiceScore;
+  final int? testScore;
   final DateTime recordedAt;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final String syncStatus;
-  final bool isDeleted;
 
   const PerformanceData({
     required this.id,
@@ -22,44 +17,17 @@ class PerformanceData {
     required this.subject,
     this.practiceScore,
     this.testScore,
-    this.sessionCount = 0,
     required this.recordedAt,
-    required this.createdAt,
-    required this.updatedAt,
-    this.syncStatus = 'local',
-    this.isDeleted = false,
   });
 }
 
-/// Consistency report data.
-class ProgressReport {
-  final double consistencyScore;
-  final String gamificationLevel;
-  final int currentStreak;
-  final Map<String, double> dailyStudyHours;
-  final int completedTasks;
-  final int pendingTasks;
-  final int skippedTasks;
-  final Map<String, double> subjectTimeMap;
-
-  const ProgressReport({
-    required this.consistencyScore,
-    required this.gamificationLevel,
-    required this.currentStreak,
-    required this.dailyStudyHours,
-    required this.completedTasks,
-    required this.pendingTasks,
-    required this.skippedTasks,
-    required this.subjectTimeMap,
-  });
-}
-
-/// Abstract progress repository.
+/// Abstract progress repository for the Analytics Engine.
 abstract class ProgressRepository {
-  Future<Either<Failure, ProgressReport>> loadReport(String period);
+  /// Fetches a normalized report for a specific skill.
+  Future<Either<Failure, ProgressReport>> loadSkillReport(String skill);
+
   Future<Either<Failure, List<PerformanceData>>> getPerformanceForSubject(
     String userId,
     String subject,
   );
-  Future<Either<Failure, Unit>> logPerformanceScore(PerformanceData data);
 }

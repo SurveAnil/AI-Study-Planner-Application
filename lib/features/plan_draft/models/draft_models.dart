@@ -8,7 +8,6 @@ class DraftBlock extends Equatable {
   final String endTime;
   final int durationMinutes;
   final int? priority;
-  final String? resourceHint;
 
   const DraftBlock({
     required this.title,
@@ -18,7 +17,6 @@ class DraftBlock extends Equatable {
     required this.endTime,
     required this.durationMinutes,
     this.priority,
-    this.resourceHint,
   });
 
   DraftBlock copyWith({
@@ -29,7 +27,6 @@ class DraftBlock extends Equatable {
     String? endTime,
     int? durationMinutes,
     int? priority,
-    String? resourceHint,
   }) {
     return DraftBlock(
       title: title ?? this.title,
@@ -39,7 +36,6 @@ class DraftBlock extends Equatable {
       endTime: endTime ?? this.endTime,
       durationMinutes: durationMinutes ?? this.durationMinutes,
       priority: priority ?? this.priority,
-      resourceHint: resourceHint ?? this.resourceHint,
     );
   }
 
@@ -52,7 +48,6 @@ class DraftBlock extends Equatable {
       endTime: json['end_time'],
       durationMinutes: json['duration_minutes'],
       priority: json['priority'],
-      resourceHint: json['resource_hint'],
     );
   }
 
@@ -64,7 +59,6 @@ class DraftBlock extends Equatable {
         'end_time': endTime,
         'duration_minutes': durationMinutes,
         'priority': priority,
-        'resource_hint': resourceHint,
       };
 
   @override
@@ -76,7 +70,6 @@ class DraftBlock extends Equatable {
         endTime,
         durationMinutes,
         priority,
-        resourceHint,
       ];
 }
 

@@ -38,7 +38,6 @@
    - S07 Revision Calendar
    - S08 Progress Report
    - S09 Subject Analytics
-   - S10 Resources
    - S11 Settings
    - S12 Performance Prediction
 5. [User Flows & Prototyping](#5-user-flows--prototyping)
@@ -247,7 +246,7 @@ The entire layout uses an **8pt grid**. All spacing values must be multiples of 
 | Hero / Empty state | 64dp | Illustrations, empty state icons (60% opacity) |
 
 **Navigation bar icons:**
-`home` · `calendar_today` · `bar_chart` · `folder` · `settings`
+`home` · `calendar_today` · `bar_chart` · `settings`
 
 ---
 
@@ -321,7 +320,7 @@ Icon:           onPrimary, 24dp
 Size:           56 × 56dp
 Border Radius:  16dp
 Elevation:      Level 4
-Use case:       Add task, Add resource
+Use case:       Add task
 ```
 
 #### IconButton — Filled (timer controls)
@@ -441,7 +440,7 @@ Border:         1dp solid outline (#E2E8F0)
 Border Radius:  16dp
 Elevation:      Level 0
 Internal Pad:   16dp
-Use case:       Resource cards, settings rows, secondary info
+Use case:       Settings rows, secondary info
 ```
 
 #### Task Block Card (schedule items)
@@ -453,7 +452,7 @@ Border Radius:  12dp
 Elevation:      Level 1
 Padding:        12dp
 Left col:       Time label (titleSmall, onSurfaceVariant)
-Center col:     Subject chip + topic name (titleMedium, bold) + resource icon
+Center col:     Subject chip + topic name (titleMedium, bold)
 Right col:      Status badge + action button
 ```
 
@@ -499,8 +498,7 @@ Transition:     AnimatedSwitcher 200ms, Curves.easeInOut on icon fill change
 | 1 | `home` | Home | S03 Dashboard |
 | 2 | `calendar_today` | Schedule | S05 Today's Schedule |
 | 3 | `bar_chart` | Progress | S08 Progress Report |
-| 4 | `folder` | Resources | S10 Resources |
-| 5 | `settings` | Settings | S11 Settings |
+| 4 | `settings` | Settings | S11 Settings |
 
 ---
 
@@ -706,7 +704,6 @@ Top margin:     40% of screen height above icon (visual center-ish)
 | S05 (no plan today) | `event_note` | "No plan for today" | "Generate a study plan or build one manually" | "Create Plan" |
 | S07 (no revisions) | `auto_stories` | "No revisions scheduled" | "Complete a study session to auto-schedule revision tasks" | None |
 | S08 (no sessions yet) | `bar_chart` | "Nothing to show yet" | "Complete your first study session to start tracking progress" | "Start Studying" |
-| S10 (no resources) | `folder_open` | "No resources yet" | "Attach PDFs, links, or slides to your study tasks" | "Add Resource" |
 | S12 (no data) | `insights` | "Unlock predictions" | "Complete 5 study sessions to activate performance prediction" | Progress bar X/5 |
 
 ---
@@ -903,7 +900,7 @@ Zone 3 — Today's Schedule Preview
 Zone 4 — Quick Actions Grid (2×2, 8dp gap)
   Each cell:    Outlined Card, icon (32dp, primary) + label (titleSmall)
   Actions:      ✨ Generate Plan | 📅 Revision Calendar
-                📊 View Progress | 📁 Resources
+                📊 View Progress
 
 Zone 5 — AI Suggestion Banner (Filled Card, if weak subject detected)
   Left:         lightbulb icon (24dp, primary)
@@ -1130,11 +1127,6 @@ Zone 3 — Timer Controls (horizontal row, center-aligned)
   End Session:  IconButton Filled (stop icon) — 56dp — triggers confirm dialog
   +5 min:       IconButton Standard (add icon) — 40dp
 
-Zone 4 — Resources Panel (collapsible, bottom)
-  Collapsed:    "Resources (3)" chip — tap to expand
-  Expanded:     Bottom sheet slides up (50% height)
-                Lists attached resources: icon + filename + subject tag
-                Tap resource: opens in-app viewer or browser
 
 Session Complete State (replaces timer display):
   Animation:    Confetti (lottie) — 2 seconds
@@ -1263,36 +1255,6 @@ Zone 5 — AI Recommendation Card (Filled Card)
 
 ---
 
-### S10 — Resources
-
-**Purpose:** Central library for all attached study materials.
-
-**Tab:** Resources (Tab 4)
-
-```
-AppBar:         "Resources" | Search icon (expands inline on tap)
-
-Zone 1 — Filter Chips Row
-  Horizontal scroll: All · PDF · Video · PPT · Practice Sets
-  Style:        Filter Chips (see 3.5)
-  Active:       primaryContainer fill
-
-Zone 2 — Resource Grid (2 columns, 8dp gap)
-  Card:         Outlined Card (12dp radius, compact)
-                Top-center: File type icon (32dp, subject color)
-                Title:      titleSmall, bold, 2-line max, centered
-                Subject:    Subject Chip
-                Date added: labelSmall, onSurfaceVariant
-  Tap:          Open resource (PDF viewer in-app / browser for video)
-  Long-press:   Context menu: Delete | Move to Subject | Share
-
-  Empty state:  [See 3.9 — S10 empty state]
-
-FAB (standard):  "+" icon — opens Add Resource bottom sheet
-  Sheet options: Upload PDF | Paste Link | Import from Files
-```
-
----
 
 ### S11 — Settings
 

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_spacing.dart';
 import '../../../features/roadmap/data/roadmap_local_service.dart';
-import '../../../features/plan_draft/presentation/day_plan_editor_screen.dart';
 import '../../ai_chat/presentation/ai_chat_screen.dart';
 import 'widgets/greeting_card.dart';
 import 'widgets/quick_stats_row.dart';
@@ -97,7 +96,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 const GreetingCard(),
                 const SizedBox(height: AppSpacing.space6),
 
-                // ── Active Skill Selector ─────────────────────────────────
+                const QuickStatsRow(),
+                const SizedBox(height: AppSpacing.space6),
+
+                // ── Active Skill (Compact, AFTER stats) ──────────────────
                 if (!_loadingResume && _allSkills.isNotEmpty)
                   _ActiveSkillSelector(
                     skills: _allSkills,
@@ -105,23 +107,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     onChanged: _onSkillChanged,
                   ),
                 if (!_loadingResume && _allSkills.isNotEmpty)
-                  const SizedBox(height: AppSpacing.space4),
-                // ──────────────────────────────────────────────────────────
+                  const SizedBox(height: AppSpacing.space8),
 
-                const QuickStatsRow(),
-                const SizedBox(height: AppSpacing.space6),
-                const AIBanner(),
-                const SizedBox(height: AppSpacing.space6),
-
-                // ── Continue Learning card ─────────────────────────────────
+                // ── Continue Learning card (PRIORITY) ──────────────────────
                 if (!_loadingResume && _savedRoadmap != null)
                   _ContinueLearningCard(
                     roadmap: _savedRoadmap!,
                     resumeDay: _resumeDay,
                   ),
                 if (!_loadingResume && _savedRoadmap != null)
-                  const SizedBox(height: AppSpacing.space6),
-                // ──────────────────────────────────────────────────────────
+                  const SizedBox(height: AppSpacing.space8),
 
                 const QuickActionGrid(),
                 const SizedBox(height: AppSpacing.space16),
@@ -166,48 +161,57 @@ class _ActiveSkillSelector extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: cs.primaryContainer.withAlpha(77),
+        color: cs.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: cs.primary.withAlpha(51)),
       ),
-      child: Row(
+      child: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        alignment: WrapAlignment.spaceBetween,
+        spacing: 8,
+        runSpacing: 8,
         children: [
-          Icon(Icons.school_outlined, color: cs.primary, size: 20),
-          const SizedBox(width: 10),
-          Text(
-            'Active Skill',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: cs.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.school_rounded, color: cs.primary.withAlpha(120), size: 20),
+              const SizedBox(width: 12),
+              Text(
+                'Focusing on',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: cs.onSurfaceVariant.withAlpha(200),
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+            ],
           ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            decoration: BoxDecoration(
-              color: cs.surface,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: cs.outlineVariant),
-            ),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 200),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: (activeSkill != null && skills.contains(activeSkill))
                     ? activeSkill
                     : (skills.isNotEmpty ? skills.first : null),
                 isDense: true,
-                icon: Icon(Icons.keyboard_arrow_down,
+                isExpanded: true,
+                alignment: Alignment.centerRight,
+                icon: Icon(Icons.expand_more_rounded,
                     color: cs.primary, size: 20),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: cs.primary,
-                      fontWeight: FontWeight.bold,
+                      color: cs.onSurface,
+                      fontWeight: FontWeight.w700,
                     ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
+                dropdownColor: cs.surfaceContainerHigh,
                 items: skills
                     .map((s) => DropdownMenuItem(
                           value: s,
-                          child: Text(s),
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            s,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ))
                     .toList(),
                 onChanged: (v) {
@@ -243,98 +247,137 @@ class _ContinueLearningCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [cs.primary, cs.tertiary],
+          colors: [
+            cs.primary.withAlpha(40),
+            Colors.transparent,
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: cs.primary.withAlpha(77),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        border: Border.all(color: cs.primary.withAlpha(40)),
       ),
-      child: Material(
-        color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(
-                builder: (_) => MainNavScreen(initialIndex: 1),
-              ),
-              (route) => false,
-            );
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              children: [
-                // Icon
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(38),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(Icons.play_circle_outline,
-                      color: Colors.white, size: 28),
-                ),
-                const SizedBox(width: 16),
-
-                // Text
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Continue Learning',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        skill,
-                        style: TextStyle(
-                          color: Colors.white.withAlpha(204),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        'Day $resumeDay',
-                        style: TextStyle(
-                          color: Colors.white.withAlpha(179),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Arrow
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha(51),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.arrow_forward,
-                      color: Colors.white, size: 18),
-                ),
-              ],
+        onTap: () {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (_) => MainNavScreen(initialIndex: 1),
             ),
+            (route) => false,
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'CONTINUE LEARNING',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: cs.primary,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          skill,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: cs.primary,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: cs.primary.withAlpha(100),
+                          blurRadius: 15,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.play_arrow_rounded,
+                        color: Colors.white, size: 32),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  _InfoChip(
+                    icon: Icons.calendar_today_rounded,
+                    label: 'Day $resumeDay',
+                  ),
+                  _InfoChip(
+                    icon: Icons.auto_awesome_rounded,
+                    label: 'AI Personalized',
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _InfoChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withAlpha(100),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: cs.onSurfaceVariant),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: cs.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

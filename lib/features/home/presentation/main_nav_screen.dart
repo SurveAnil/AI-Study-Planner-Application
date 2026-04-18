@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../../core/constants/app_colors.dart';
-
 import '../../schedule/presentation/schedule_screen.dart';
+import '../../progress/presentation/progress_screen.dart';
+import '../../roadmap/data/roadmap_local_service.dart';
 import 'package:ai_study_planner/features/home/presentation/home_screen.dart';
 
 /// The root scaffold for the application, providing bottom navigation.
-///
-/// Phase 1.7: Added [initialIndex] so other screens can navigate back to a
-/// specific tab (e.g. "Change Goal" returns to Home).
 class MainNavScreen extends StatefulWidget {
   final int initialIndex;
 
@@ -21,66 +18,81 @@ class MainNavScreen extends StatefulWidget {
 
 class _MainNavScreenState extends State<MainNavScreen> {
   late int _currentIndex;
-
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const ScheduleScreen(), // S05 - Schedule
-    const Scaffold(body: Center(child: Text('Progress (S08)'))),
-    const Scaffold(body: Center(child: Text('Resources (S13)'))),
-    const Scaffold(body: Center(child: Text('Settings (S14)'))),
-  ];
+  String? _activeSkill;
 
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex.clamp(0, _screens.length - 1);
+    _currentIndex = widget.initialIndex.clamp(0, 3);
+    _loadActiveSkill();
   }
+
+  Future<void> _loadActiveSkill() async {
+    final skill = await RoadmapLocalService.instance.getActiveSkill();
+    if (mounted) {
+      setState(() => _activeSkill = skill);
+    }
+  }
+
+  List<Widget> get _screens => [
+    const HomeScreen(),
+    const ScheduleScreen(),
+    ProgressScreen(skill: _activeSkill ?? 'Data Structures'), // Fallback if none active
+    const Scaffold(body: Center(child: Text('Settings (S14)'))),
+  ];
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        height: 80,
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        indicatorColor: AppColors.primaryContainer,
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Symbols.home_rounded, fill: 0, color: AppColors.onSurfaceVariant),
-            selectedIcon: Icon(Symbols.home_rounded, fill: 1, color: AppColors.primary),
-            label: 'Home',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(
+              color: cs.outlineVariant.withAlpha(30),
+              width: 0.5,
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Symbols.calendar_today_rounded, fill: 0, color: AppColors.onSurfaceVariant),
-            selectedIcon: Icon(Symbols.calendar_today_rounded, fill: 1, color: AppColors.primary),
-            label: 'Schedule',
-          ),
-          NavigationDestination(
-            icon: Icon(Symbols.bar_chart_rounded, fill: 0, color: AppColors.onSurfaceVariant),
-            selectedIcon: Icon(Symbols.bar_chart_rounded, fill: 1, color: AppColors.primary),
-            label: 'Progress',
-          ),
-          NavigationDestination(
-            icon: Icon(Symbols.folder_rounded, fill: 0, color: AppColors.onSurfaceVariant),
-            selectedIcon: Icon(Symbols.folder_rounded, fill: 1, color: AppColors.primary),
-            label: 'Resources',
-          ),
-          NavigationDestination(
-            icon: Icon(Symbols.settings_rounded, fill: 0, color: AppColors.onSurfaceVariant),
-            selectedIcon: Icon(Symbols.settings_rounded, fill: 1, color: AppColors.primary),
-            label: 'Settings',
-          ),
-        ],
+        ),
+        child: NavigationBar(
+          selectedIndex: _currentIndex,
+          onDestinationSelected: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          height: 80,
+          backgroundColor: cs.surfaceContainerHigh,
+          elevation: 0,
+          indicatorColor: cs.primary.withAlpha(30),
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          destinations: [
+            NavigationDestination(
+              icon: Icon(Symbols.home_rounded, fill: 0, color: cs.onSurfaceVariant),
+              selectedIcon: Icon(Symbols.home_rounded, fill: 1, color: cs.primary),
+              label: 'Home',
+            ),
+            NavigationDestination(
+              icon: Icon(Symbols.calendar_today_rounded, fill: 0, color: cs.onSurfaceVariant),
+              selectedIcon: Icon(Symbols.calendar_today_rounded, fill: 1, color: cs.primary),
+              label: 'Schedule',
+            ),
+            NavigationDestination(
+              icon: Icon(Symbols.bar_chart_rounded, fill: 0, color: cs.onSurfaceVariant),
+              selectedIcon: Icon(Symbols.bar_chart_rounded, fill: 1, color: cs.primary),
+              label: 'Progress',
+            ),
+            NavigationDestination(
+              icon: Icon(Symbols.settings_rounded, fill: 0, color: cs.onSurfaceVariant),
+              selectedIcon: Icon(Symbols.settings_rounded, fill: 1, color: cs.primary),
+              label: 'Settings',
+            ),
+          ],
+        ),
       ),
     );
   }

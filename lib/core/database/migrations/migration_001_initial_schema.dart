@@ -46,7 +46,6 @@ class Migration001InitialSchema {
         end_time         TEXT NOT NULL,
         planned_duration INTEGER NOT NULL,
         status           TEXT DEFAULT 'pending',
-        resource_link    TEXT,
         priority         INTEGER DEFAULT 2,
         created_at       TEXT NOT NULL,
         updated_at       TEXT NOT NULL,

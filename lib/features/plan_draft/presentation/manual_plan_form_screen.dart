@@ -212,7 +212,7 @@ class _ManualPlanFormScreenState extends State<ManualPlanFormScreen> {
                   ),
                   if (_timeSlots.length > 1)
                     IconButton(
-                      icon: const Icon(Icons.close, color: AppColors.error),
+                      icon: Icon(Icons.close, color: cs.error),
                       onPressed: () => setState(() => _timeSlots.removeAt(i)),
                     ),
                 ],
@@ -246,10 +246,10 @@ class _ManualPlanFormScreenState extends State<ManualPlanFormScreen> {
                     label: Text(s),
                     selected: _selectedSubjects.contains(s),
                     onSelected: (_) => _toggleSubject(s),
-                    selectedColor: AppColors.primaryContainer,
-                    checkmarkColor: AppColors.primary,
+                    selectedColor: cs.primaryContainer,
+                    checkmarkColor: cs.primary,
                     side: _selectedSubjects.contains(s)
-                        ? const BorderSide(color: AppColors.primary, width: 1.5)
+                        ? BorderSide(color: cs.primary, width: 1.5)
                         : null,
                   )),
               ActionChip(
@@ -326,7 +326,7 @@ class _SectionLabel extends StatelessWidget {
         style: Theme.of(context)
             .textTheme
             .labelLarge
-            ?.copyWith(color: AppColors.onSurfaceVariant),
+            ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
       );
 }
 
@@ -350,18 +350,18 @@ class _TappableField extends StatelessWidget {
         padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.space4, vertical: AppSpacing.space3),
         decoration: BoxDecoration(
-          color: AppColors.surfaceVariant,
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: AppColors.onSurfaceVariant),
+            Icon(icon, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
             const SizedBox(width: AppSpacing.space2),
             Text(label,
                 style: Theme.of(context)
                     .textTheme
                     .bodyMedium
-                    ?.copyWith(color: AppColors.onSurface)),
+                    ?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
           ],
         ),
       ),

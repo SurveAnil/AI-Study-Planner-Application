@@ -35,18 +35,20 @@ class _RoadmapScreenState extends State<RoadmapScreen>
       duration: const Duration(milliseconds: 600),
     );
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
-    
+
     _loadRoadmap();
   }
 
   Future<void> _loadRoadmap() async {
     print("Fetching roadmap from DB");
     try {
-      final data = await RoadmapLocalService.instance.getRoadmapForSkill(widget.skill);
+      final data = await RoadmapLocalService.instance.getRoadmapForSkill(
+        widget.skill,
+      );
       if (data != null) {
         final stages = data['stages'] as List? ?? [];
         print("Stages count: ${stages.length}");
-        
+
         if (mounted) {
           setState(() {
             _roadmap = data;
@@ -88,7 +90,7 @@ class _RoadmapScreenState extends State<RoadmapScreen>
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    
+
     if (_error != null || _roadmap == null) {
       return Scaffold(
         appBar: AppBar(title: Text(widget.skill)),
@@ -132,23 +134,21 @@ class _RoadmapScreenState extends State<RoadmapScreen>
                 ),
               ],
               flexibleSpace: FlexibleSpaceBar(
-                titlePadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                titlePadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 title: Text(
                   skill,
                   style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 18),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
                 ),
                 background: Container(
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        cs.primary,
-                        cs.tertiary,
-                      ],
-                    ),
+                    color: cs.surface,
+                    border: Border(bottom: BorderSide(color: cs.outlineVariant.withAlpha(20))),
                   ),
                   child: Stack(
                     children: [
@@ -160,7 +160,7 @@ class _RoadmapScreenState extends State<RoadmapScreen>
                           height: 180,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white.withAlpha(20),
+                            color: cs.primary.withAlpha(10),
                           ),
                         ),
                       ),
@@ -172,7 +172,7 @@ class _RoadmapScreenState extends State<RoadmapScreen>
                           height: 120,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.white.withAlpha(15),
+                            color: cs.secondary.withAlpha(10),
                           ),
                         ),
                       ),
@@ -195,7 +195,9 @@ class _RoadmapScreenState extends State<RoadmapScreen>
 
                     // Overview card
                     _OverviewCard(
-                        overview: overview, totalDays: totalDays.toString()),
+                      overview: overview,
+                      totalDays: totalDays.toString(),
+                    ),
 
                     const SizedBox(height: 20),
 
@@ -204,11 +206,11 @@ class _RoadmapScreenState extends State<RoadmapScreen>
                       padding: const EdgeInsets.only(left: 4, bottom: 8),
                       child: Text(
                         '📚 Learning Stages',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: cs.onSurface,
-                                ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: cs.onSurface,
+                            ),
                       ),
                     ),
                   ],
@@ -218,31 +220,31 @@ class _RoadmapScreenState extends State<RoadmapScreen>
 
             // ─── Stage Cards ─────────────────────────────────────────
             SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final stage =
-                      stages[index] as Map<String, dynamic>;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 6),
-                    child: _StageCard(
-                      stage: stage,
-                      index: index,
-                      isExpanded: _expanded[index],
-                      onToggle: () => setState(
-                          () => _expanded[index] = !_expanded[index]),
-                    ),
-                  );
-                },
-                childCount: stages.length,
-              ),
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final stage = stages[index] as Map<String, dynamic>;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  child: _StageCard(
+                    stage: stage,
+                    index: index,
+                    isExpanded: _expanded[index],
+                    onToggle: () =>
+                        setState(() => _expanded[index] = !_expanded[index]),
+                  ),
+                );
+              }, childCount: stages.length),
             ),
 
             // ─── Generate New Roadmap Button ─────────────────────────
             SliverToBoxAdapter(
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 20,
+                ),
                 child: Column(
                   children: [
                     SizedBox(
@@ -274,7 +276,7 @@ class _RoadmapScreenState extends State<RoadmapScreen>
               ),
             ),
 
-        const SliverToBoxAdapter(child: SizedBox(height: 40)),
+            const SliverToBoxAdapter(child: SizedBox(height: 40)),
           ],
         ),
       ),
@@ -329,14 +331,15 @@ class _OverviewCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            cs.primaryContainer.withAlpha(128),
-            cs.secondaryContainer.withAlpha(77),
-          ],
-        ),
+        color: cs.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(38),
+            offset: const Offset(0, 2),
+            blurRadius: 8,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -348,14 +351,16 @@ class _OverviewCard extends StatelessWidget {
               Text(
                 'Roadmap Overview',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: cs.primary,
-                    ),
+                  fontWeight: FontWeight.bold,
+                  color: cs.primary,
+                ),
               ),
               const Spacer(),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: cs.primary,
                   borderRadius: BorderRadius.circular(20),
@@ -376,9 +381,9 @@ class _OverviewCard extends StatelessWidget {
             Text(
               overview,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: cs.onSurfaceVariant,
-                    height: 1.5,
-                  ),
+                color: cs.onSurfaceVariant,
+                height: 1.5,
+              ),
             ),
           ],
         ],
@@ -400,18 +405,10 @@ class _StageCard extends StatelessWidget {
     required this.onToggle,
   });
 
-  static const List<Color> _stageColors = [
-    Color(0xFF6C63FF),
-    Color(0xFF00BCD4),
-    Color(0xFF4CAF50),
-    Color(0xFFFF9800),
-    Color(0xFFE91E63),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final color = _stageColors[index % _stageColors.length];
+    final color = cs.primary; // Single consistent color as per design rules
 
     final title = stage['title'] as String? ?? 'Stage ${index + 1}';
     final description = stage['description'] as String? ?? '';
@@ -425,7 +422,8 @@ class _StageCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-            color: isExpanded ? color.withAlpha(153) : cs.outlineVariant),
+          color: isExpanded ? color.withAlpha(153) : cs.outlineVariant,
+        ),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -468,19 +466,17 @@ class _StageCard extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style:
-                              Theme.of(context).textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           '$durationDays days',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: color,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: color,
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                       ],
                     ),
@@ -511,9 +507,9 @@ class _StageCard extends StatelessWidget {
                     Text(
                       description,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: cs.onSurfaceVariant,
-                            height: 1.5,
-                          ),
+                        color: cs.onSurfaceVariant,
+                        height: 1.5,
+                      ),
                     ),
                     const SizedBox(height: 12),
                   ],
@@ -525,11 +521,13 @@ class _StageCard extends StatelessWidget {
                     ...topics.map<Widget>((t) {
                       final topic = t as Map<String, dynamic>;
                       final name = topic['name'] as String? ?? '';
-                      final subs = (topic['subtopics'] as List?)
-                              ?.cast<String>() ??
-                          [];
+                      final subs =
+                          (topic['subtopics'] as List?)?.cast<String>() ?? [];
                       return _TopicRow(
-                          name: name, subtopics: subs, color: color);
+                        name: name,
+                        subtopics: subs,
+                        color: color,
+                      );
                     }),
                     const SizedBox(height: 10),
                   ],
@@ -585,9 +583,9 @@ class _SectionLabel extends StatelessWidget {
     return Text(
       label,
       style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
+        fontWeight: FontWeight.bold,
+        color: color,
+      ),
     );
   }
 }
@@ -596,8 +594,11 @@ class _TopicRow extends StatelessWidget {
   final String name;
   final List<String> subtopics;
   final Color color;
-  const _TopicRow(
-      {required this.name, required this.subtopics, required this.color});
+  const _TopicRow({
+    required this.name,
+    required this.subtopics,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -611,16 +612,15 @@ class _TopicRow extends StatelessWidget {
               Container(
                 width: 6,
                 height: 6,
-                decoration: BoxDecoration(
-                    color: color, shape: BoxShape.circle),
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   name,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -652,7 +652,9 @@ class _Chip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(
-          horizontal: small ? 8 : 10, vertical: small ? 3 : 5),
+        horizontal: small ? 8 : 10,
+        vertical: small ? 3 : 5,
+      ),
       decoration: BoxDecoration(
         color: color.withAlpha(31),
         borderRadius: BorderRadius.circular(20),
@@ -674,8 +676,11 @@ class _ProjectTile extends StatelessWidget {
   final String title;
   final String description;
   final Color color;
-  const _ProjectTile(
-      {required this.title, required this.description, required this.color});
+  const _ProjectTile({
+    required this.title,
+    required this.description,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -705,16 +710,16 @@ class _ProjectTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 if (description.isNotEmpty)
                   Text(
                     description,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                   ),
               ],
             ),

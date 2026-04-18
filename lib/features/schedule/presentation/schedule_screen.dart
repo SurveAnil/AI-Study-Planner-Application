@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../bloc/schedule_cubit.dart';
 import '../../roadmap/data/roadmap_local_service.dart';
 import '../../plan_draft/presentation/day_plan_editor_screen.dart';
 import '../../session/presentation/active_session_screen.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/constants/app_colors.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -228,7 +228,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           final int dayNum = index + 1;
           final bool isSelected = state.selectedDay == dayNum;
           final bool isActive = state.activeDay == dayNum;
-          final bool isFuture = dayNum > state.activeDay;
 
           final dateStr = _startDate != null 
               ? RoadmapLocalService.instance.calculateDate(_startDate!, dayNum)
@@ -303,13 +302,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     const Positioned(
                       top: -2,
                       right: -2,
-                      child: Icon(Icons.check_circle, size: 14, color: Colors.green),
+                      child: Icon(Icons.check_circle, size: 14, color: AppColors.success),
                     ),
                   if (isSelected && isActive)
-                     Positioned(
+                     const Positioned(
                       top: -2,
                       right: -2,
-                      child: Icon(Icons.local_fire_department, size: 14, color: Colors.orange.shade700),
+                      child: Icon(Icons.local_fire_department, size: 14, color: AppColors.warning),
                     ),
                 ],
               ),
@@ -495,13 +494,13 @@ class _TaskCardState extends State<_TaskCard> {
               children: [
                 CircleAvatar(
                   backgroundColor: isLocked 
-                      ? cs.surfaceContainerHighest 
+                      ? cs.surfaceContainerHighest
                       : (isCompleted
-                          ? Colors.green.withAlpha(30)
-                          : (status == 'skipped' ? Colors.grey.withAlpha(30) : (isPaused ? Colors.orange.withAlpha(30) : cs.primaryContainer))),
+                          ? AppColors.success.withAlpha(30)
+                          : (status == 'skipped' ? Colors.grey.withAlpha(30) : (isPaused ? AppColors.warning.withAlpha(30) : cs.primaryContainer))),
                   child: Icon(
                     isLocked ? Icons.lock_outline : (isCompleted ? Icons.check : (status == 'skipped' ? Icons.block : (isPaused ? Icons.pause_rounded : Icons.book))),
-                    color: isLocked ? cs.outline : (isCompleted ? Colors.green : (status == 'skipped' ? Colors.grey : (isPaused ? Colors.orange : cs.primary))),
+                    color: isLocked ? cs.outline : (isCompleted ? AppColors.success : (status == 'skipped' ? Colors.grey : (isPaused ? AppColors.warning : cs.primary))),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -549,7 +548,7 @@ class _TaskCardState extends State<_TaskCard> {
                       style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
                     ),
                     side: BorderSide.none,
-                    backgroundColor: isCompleted ? Colors.green.withAlpha(30) : Colors.grey.withAlpha(30),
+                    backgroundColor: isCompleted ? AppColors.success.withAlpha(30) : Colors.grey.withAlpha(30),
                   ),
               ],
             ),

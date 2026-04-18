@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
-import '../../../session/presentation/active_session_screen.dart';
 import '../../../roadmap/data/roadmap_local_service.dart';
 import '../../../roadmap/presentation/roadmap_input_screen.dart';
 import '../../../roadmap/presentation/roadmap_screen.dart';
+import '../../../roadmap/presentation/ai_roadmap_main_screen.dart';
+import '../../../plan_draft/presentation/day_plan_editor_screen.dart';
 
 /// 2x2 Grid of primary actions
 class QuickActionGrid extends StatelessWidget {
@@ -24,47 +24,38 @@ class QuickActionGrid extends StatelessWidget {
               ),
         ),
         const SizedBox(height: AppSpacing.space4),
-        GridView.count(
+        GridView(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          mainAxisSpacing: AppSpacing.space3,
-          crossAxisSpacing: AppSpacing.space3,
-          childAspectRatio: 1.5,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            mainAxisExtent: 120, // fixed height
+          ),
           children: [
             _ActionTile(
               label: 'AI Roadmap',
               icon: Symbols.auto_awesome_rounded,
-              color: AppColors.primary,
+              color: Theme.of(context).colorScheme.primary,
               onTap: () => _handleAiRoadmapTap(context),
             ),
             _ActionTile(
               label: 'Manual Task',
               icon: Symbols.add_task_rounded,
-              color: const Color(0xFF10B981), // Emerald
+              color: Theme.of(context).colorScheme.primary,
               onTap: () {},
             ),
             _ActionTile(
-              label: 'Start Timer',
-              icon: Symbols.timer_rounded,
-              color: const Color(0xFFF59E0B), // Amber
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ActiveSessionScreen(
-                      taskId: 'quick-focus',
-                      taskTitle: 'Quick Focus',
-                      plannedDurationMinutes: 25,
-                    ),
-                  ),
-                );
-              },
+              label: 'Modify Day',
+              icon: Symbols.edit_calendar_rounded,
+              color: Theme.of(context).colorScheme.primary,
+              onTap: () => _handleDayEditTap(context),
             ),
             _ActionTile(
               label: 'Revision',
               icon: Symbols.history_edu_rounded,
-              color: const Color(0xFF8B5CF6), // Violet
+              color: Theme.of(context).colorScheme.primary,
               onTap: () {},
             ),
           ],
@@ -77,32 +68,33 @@ class QuickActionGrid extends StatelessWidget {
   /// - If active skill has a roadmap → open it directly
   /// - Else if any roadmap exists → open latest
   /// - Else → navigate to input screen
-  void _handleAiRoadmapTap(BuildContext context) async {
+  void _handleAiRoadmapTap(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const AiRoadmapMainScreen(),
+      ),
+    );
+  }
+
+  /// Navigate to Day 1 editor for active skill
+  void _handleDayEditTap(BuildContext context) async {
     final svc = RoadmapLocalService.instance;
-
-    // Try active skill first
     final activeSkill = await svc.getActiveSkill();
-    Map<String, dynamic>? roadmap;
-    if (activeSkill != null) {
-      roadmap = await svc.getRoadmapForSkill(activeSkill);
-    }
-    // Fallback to latest
-    roadmap ??= await svc.getLatestRoadmap();
 
-    if (roadmap != null && context.mounted) {
-      final skill = roadmap['skill'] as String? ?? 'Unknown';
+    if (activeSkill != null && context.mounted) {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => RoadmapScreen(skill: skill),
+          builder: (context) => DayPlanEditorScreen(
+            skill: activeSkill,
+            initialDay: 1,
+          ),
         ),
       );
     } else if (context.mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const RoadmapInputScreen(),
-        ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No active skill found. Create a roadmap first!')),
       );
     }
   }
@@ -123,36 +115,45 @@ class _ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Theme.of(context).colorScheme.surface,
-      borderRadius: BorderRadius.circular(16),
-      elevation: 2,
-      shadowColor: const Color(0x14000000), // ElevatedCard token
-      child: InkWell(
-        onTap: onTap,
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.space3),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.space2),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
+        border: Border.all(color: cs.outlineVariant.withAlpha(20)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // ICON (TOP)
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: color, size: 24, fill: 1),
                 ),
-                child: Icon(icon, color: color, size: 24, fill: 1),
-              ),
-              const Spacer(),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ],
+                // TEXT (BOTTOM)
+                Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: cs.onSurface,
+                      ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

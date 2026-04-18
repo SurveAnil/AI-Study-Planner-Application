@@ -13,7 +13,6 @@ class DraftBlockSchema(BaseModel):
     end_time:         str    # MUST match HH:MM 24h
     duration_minutes: int    # 5–240
     priority:         Optional[Literal[1, 2, 3]] = None  # nullable for break only
-    resource_hint:    Optional[str] = None
 
     @field_validator("start_time", "end_time")
     @classmethod
@@ -75,7 +74,6 @@ class Block(BaseModel):
     type: str                    # "study" or "break" or "review"
     start: str
     end: str
-    resource_link: Optional[str] = None
 
 class PlanResponse(BaseModel):
     plan_id: str

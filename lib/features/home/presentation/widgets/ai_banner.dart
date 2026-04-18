@@ -45,13 +45,13 @@ class AIBanner extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.space2),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryContainer,
+                    color: Theme.of(context).colorScheme.primary.withAlpha(30),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Symbols.smart_toy_rounded,
                     fill: 1,
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.space3),
@@ -62,13 +62,15 @@ class AIBanner extends StatelessWidget {
                       Text(
                         'AI Recommendation',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: AppColors.primary,
+                              color: Theme.of(context).colorScheme.primary,
                               fontWeight: FontWeight.bold,
                             ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Focus on ${weakSubjects.first} today.',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Theme.of(context).colorScheme.onSurface,
                             ),

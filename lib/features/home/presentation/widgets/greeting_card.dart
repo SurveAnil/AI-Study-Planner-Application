@@ -11,72 +11,89 @@ class GreetingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
+      padding: const EdgeInsets.all(AppSpacing.space8), // 32 is slightly above 28, I'll use 28 if I can or 24. space6=24, space8=32. I'll use 28 if possible but sticking to scale: 24 (space6) or something near. User said 24-28. I'll use 24.
       decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
+        gradient: LinearGradient(
+          colors: [cs.surfaceContainerHigh, cs.surface],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusHeroCard),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x404F6FE8),
-            offset: Offset(0, 8),
-            blurRadius: 24,
+            color: Colors.black.withAlpha(25),
+            offset: const Offset(0, 4),
+            blurRadius: 12,
           ),
         ],
       ),
-      padding: const EdgeInsets.all(AppSpacing.space5),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                DateFormat('E, MMM d').format(DateTime.now()),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w600,
+      child: Padding(
+        padding: const EdgeInsets.all(24), // Explicit 24-28 as requested
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    DateFormat('EEEE, MMMM d').format(DateTime.now()),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant.withAlpha(180),
+                      fontWeight: FontWeight.w500,
                     ),
+                  ),
+                  const SizedBox(height: AppSpacing.space1),
+                  Text(
+                    'Good Morning,\nAnil!',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: cs.onSurface,
+                      fontWeight: FontWeight.w700,
+                      height: 1.2,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: AppSpacing.space1),
-              Text(
-                'Good Morning, Anil!',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
+            ),
+            const SizedBox(width: 12),
+            // Streak Badge
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.space4),
+              decoration: BoxDecoration(
+                color: cs.primary.withAlpha(38), // 0.15 opacity
+                shape: BoxShape.circle,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Symbols.local_fire_department_rounded,
+                    color: cs.primary,
+                    fill: 1,
+                    size: 28,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '12',
+                    maxLines: 1,
+                    overflow: TextOverflow.clip,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: cs.primary,
                       fontWeight: FontWeight.bold,
                     ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          // Streak Badge
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.space3,
-              vertical: AppSpacing.space2,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Symbols.local_fire_department_rounded,
-                  color: Colors.orangeAccent,
-                  fill: 1,
-                  size: 20,
-                ),
-                const SizedBox(width: AppSpacing.space1),
-                Text(
-                  '12',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-              ],
-            ),
-          )
-        ],
+            )
+          ],
+        ),
       ),
     );
   }

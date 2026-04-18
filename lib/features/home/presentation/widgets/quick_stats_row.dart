@@ -72,37 +72,53 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x14000000), // AppColors shadow token fallback
-            offset: Offset(0, 2),
-            blurRadius: 8,
-          ),
-        ],
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusCompactCard),
+        border: Border.all(color: cs.outlineVariant.withAlpha(20)),
       ),
-      padding: const EdgeInsets.all(AppSpacing.space3),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Icon(icon, size: 20, color: AppColors.primary),
-          const SizedBox(height: AppSpacing.space2),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
+          // Left accent strip
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            child: Container(
+              width: 3,
+              color: cs.primary.withAlpha(80),
+            ),
           ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.space3),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, size: 18, color: cs.primary.withAlpha(160)),
+                const SizedBox(height: AppSpacing.space2),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurface,
+                  ),
                 ),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: cs.onSurfaceVariant.withAlpha(150),
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

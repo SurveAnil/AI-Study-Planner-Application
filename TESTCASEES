@@ -1,0 +1,232 @@
+# 📱 REAL DEVICE TEST CHECKLIST — AI STUDY PLANNER
+
+---
+
+# 🔵 PHASE 1 — FRESH START (NEW USER FLOW)
+
+## ✅ Test 1: App Launch
+
+* [x] App opens without crash
+* [x] No previous data shown
+* [x] Clean home screen
+
+---
+
+## ✅ Test 2: Skill Input
+
+* [x] Enter skill (e.g., Flutter)
+* [x] Leave duration empty → defaults to 90 
+* [x] Click Generate Roadmap
+* [ ] Roadmap loads correctly
+
+---
+
+## ✅ Test 3: Learning Setup
+
+* [x] Select start date (today)
+* [x] Enter daily hours (or leave default = 2)
+* [ ] Submit
+
+VERIFY:
+
+* [ ] user_learning_state created
+* [ ] current_day = 1
+
+---
+
+# 🔵 PHASE 2 — DAY 1 PLAN
+
+## ✅ Test 4: Plan Generation
+
+* [ ] Day 1 plan loads
+* [ ] Tasks visible
+* [ ] No duplicate tasks
+* [ ] task_id exists (internally)
+
+---
+
+## ✅ Test 5: Task Interaction
+
+* [ ] Mark 1 task complete
+* [ ] Mark 1 task skipped
+* [ ] Leave 1 incomplete
+
+VERIFY:
+
+* [ ] Status persists after refresh
+* [ ] No wrong task toggled
+
+---
+
+## ✅ Test 6: Timer Flow
+
+* [ ] Start task
+* [ ] Pause
+* [ ] Resume
+* [ ] Complete
+
+VERIFY:
+
+* [ ] Status updates correctly
+* [ ] No crash on navigation
+
+---
+
+# 🔵 PHASE 3 — APP RESTART
+
+## ✅ Test 7: Resume Session
+
+* [ ] Close app completely
+* [ ] Reopen app
+
+VERIFY:
+
+* [ ] Same day loads
+* [ ] Completed tasks remain saved
+* [ ] “Continue Day 1” works
+
+---
+
+# 🔵 PHASE 4 — DAY PROGRESSION
+
+## ✅ Test 8: Next Day Logic
+
+* [ ] Change system date → +1 day
+* [ ] Open app
+
+VERIFY:
+
+* [ ] current_day = 2
+* [ ] New plan generated OR loaded
+* [ ] Old plan NOT overwritten
+
+---
+
+## ✅ Test 9: Skip Multiple Days
+
+* [ ] Change date → +3 days
+* [ ] Open app
+
+VERIFY:
+
+* [ ] current_day increased correctly
+* [ ] No crash
+* [ ] No duplicate plans
+
+---
+
+# 🔵 PHASE 5 — PLAN AHEAD
+
+## ✅ Test 10: Generate Ahead
+
+* [ ] Use “Plan Ahead”
+* [ ] Select 2–3 days
+
+VERIFY:
+
+* [ ] Plans stored in cache
+* [ ] No duplicate API calls
+* [ ] current_day unchanged
+
+---
+
+## ✅ Test 11: Navigate Future Days
+
+* [ ] Open Day 2 / Day 3 manually
+
+VERIFY:
+
+* [ ] Plans load instantly
+* [ ] No API call triggered
+
+---
+
+# 🔵 PHASE 6 — OFFLINE MODE
+
+## ✅ Test 12: No Internet
+
+* [ ] Turn OFF internet
+* [ ] Open new day (no cache)
+
+VERIFY:
+
+* [ ] Retry attempted
+* [ ] Fallback plan shown
+* [ ] App does NOT crash
+
+---
+
+# 🔵 PHASE 7 — FUTURE START DATE
+
+## ✅ Test 13: Future Start
+
+* [ ] Set start_date = tomorrow
+* [ ] Open app today
+
+VERIFY:
+
+* [ ] Message shown: “Plan starts on…”
+* [ ] No plan generated
+* [ ] current_day stays 1
+
+---
+
+# 🔵 PHASE 8 — EDGE CASES
+
+## ✅ Test 14: Time Backward
+
+* [ ] Move system date backward
+
+VERIFY:
+
+* [ ] No crash
+* [ ] current_day unchanged
+
+---
+
+## ✅ Test 15: Duplicate Task Scenario
+
+* [ ] Check if two tasks look identical
+
+VERIFY:
+
+* [ ] Marking one does NOT affect other
+
+---
+
+# 🔵 PHASE 9 — PERFORMANCE
+
+## ✅ Test 16: Speed
+
+VERIFY:
+
+* [ ] Schedule screen loads < 1 sec
+* [ ] Cached plan loads instantly
+* [ ] No lag while scrolling
+
+---
+
+# 🔵 PHASE 10 — GENERAL UX
+
+## ✅ Test 17: UI Stability
+
+* [ ] No overflow errors
+* [ ] Keyboard doesn’t break layout
+* [ ] Buttons responsive
+
+---
+
+# 📦 FINAL REPORT (YOU WILL SEND)
+
+After testing, report:
+
+1. ✅ What works perfectly
+2. ❌ What broke / bugs found
+3. ⚠️ Weird behaviors (even small ones)
+4. 💡 UX improvements you feel needed
+
+---
+
+DO NOT FIX ANYTHING YET.
+
+We will analyze first, then patch intelligently.

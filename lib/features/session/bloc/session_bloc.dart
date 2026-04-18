@@ -130,6 +130,7 @@ class SessionError extends SessionState {
 class SessionBloc extends Bloc<SessionEvent, SessionState> {
   final SessionRepository _repository;
   int _pauseCount = 0;
+  Timer? _ticker;
 
   SessionBloc({
     required SessionRepository repository,
@@ -142,6 +143,30 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
     on<EndSessionEvent>(_onEnd);
     on<ExtendSessionEvent>(_onExtend);
     on<TickEvent>(_onTick);
+  }
+
+  void _startTicker() {
+    _ticker?.cancel();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (timer) {
+      int currentElapsed = 0;
+      if (state is SessionRunning) {
+        currentElapsed = (state as SessionRunning).elapsedSeconds;
+      } else if (state is SessionOvertime) {
+        currentElapsed = (state as SessionOvertime).session.plannedDuration + (state as SessionOvertime).overtimeSeconds;
+      }
+      add(TickEvent(currentElapsed + 1));
+    });
+  }
+
+  void _stopTicker() {
+    _ticker?.cancel();
+    _ticker = null;
+  }
+
+  @override
+  Future<void> close() {
+    _stopTicker();
+    return super.close();
   }
 
   Future<void> _onStart(
@@ -159,6 +184,7 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
       (session) {
         _pauseCount = 0;
         emit(SessionRunning(session, 0, _pauseCount));
+        _startTicker();
       },
     );
   }
@@ -185,6 +211,7 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
             (session) {
               _pauseCount = latest.pauseCount;
               emit(SessionRunning(session, latest.actualDuration, _pauseCount));
+              _startTicker();
             },
           );
         } else {
@@ -201,6 +228,7 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
     if (state is SessionRunning) {
       final running = state as SessionRunning;
       _pauseCount++;
+      _stopTicker();
       emit(SessionPaused(running.session, running.elapsedSeconds, _pauseCount));
     }
   }
@@ -212,6 +240,7 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
     if (state is SessionPaused) {
       final paused = state as SessionPaused;
       emit(SessionRunning(paused.session, paused.elapsedSeconds, _pauseCount));
+      _startTicker();
     }
   }
 
@@ -253,7 +282,10 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
     final result = await _repository.endSession(completedSession);
     result.fold(
       (failure) => emit(SessionError(failure.message)),
-      (_) => emit(SessionComplete(completedSession)),
+      (_) {
+        _stopTicker();
+        emit(SessionComplete(completedSession));
+      },
     );
   }
 

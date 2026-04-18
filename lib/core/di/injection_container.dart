@@ -33,6 +33,10 @@ import '../../features/session/bloc/session_bloc.dart';
 import '../../features/revision/bloc/revision_calendar_cubit.dart';
 import '../../features/progress/bloc/prediction_cubit.dart';
 import '../../features/progress/bloc/subject_analytics_cubit.dart';
+import '../../features/progress/data/progress_repository.dart';
+import '../../features/progress/data/progress_repository_impl.dart';
+import '../../features/progress/data/analytics_aggregator.dart';
+import '../../features/progress/bloc/progress_cubit.dart';
 import '../../features/ai_chat/bloc/ai_chat_cubit.dart';
 
 final sl = GetIt.instance;
@@ -103,11 +107,18 @@ Future<void> init() async {
     ),
   );
 
-  // SubjectAnalyticsRepository
   sl.registerLazySingleton<SubjectAnalyticsRepository>(
     () => SubjectAnalyticsRepositoryImpl(
       dioClient: sl<DioClient>(),
     ),
+  );
+
+  sl.registerLazySingleton<AnalyticsAggregator>(
+    () => AnalyticsAggregator(),
+  );
+
+  sl.registerLazySingleton<ProgressRepository>(
+    () => ProgressRepositoryImpl(aggregator: sl<AnalyticsAggregator>()),
   );
 
   sl.registerLazySingleton<AiChatRepository>(
@@ -172,5 +183,9 @@ Future<void> init() async {
 
   sl.registerFactoryParam<AiChatCubit, String, void>(
     (userId, _) => AiChatCubit(sl<AiChatRepository>(), userId),
+  );
+
+  sl.registerFactory<ProgressCubit>(
+    () => ProgressCubit(repository: sl<ProgressRepository>()),
   );
 }

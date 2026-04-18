@@ -85,7 +85,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
               'Try: "Study DBMS for 2 hours"',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.outline,
+                    color: Theme.of(context).colorScheme.outline,// we have to change the color of text, current text is very slightly visible because of white theam
                   ),
             ),
           ],

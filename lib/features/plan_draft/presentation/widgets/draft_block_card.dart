@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../models/draft_models.dart';
 
@@ -10,14 +9,6 @@ class DraftBlockCard extends StatelessWidget {
   final Key itemKey;
   /// Index within the ReorderableListView — required for drag handle.
   final int index;
-
-  // Colors per block type (from SKILL.md §9.2)
-  static const _typeColors = {
-    'study': AppColors.primary,
-    'break': AppColors.onSurfaceVariant,
-    'practice': AppColors.practiceOrange,
-    'review': AppColors.revisionBlue,
-  };
 
   static const _typeIcons = {
     'study': Icons.menu_book_rounded,
@@ -36,20 +27,24 @@ class DraftBlockCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final color = _typeColors[block.type] ?? AppColors.primary;
+    
+    // Design System: Accent usages strictly Primary or Secondary
+    final color = block.type == 'break' ? cs.onSurfaceVariant : cs.primary;
     final icon = _typeIcons[block.type] ?? Icons.menu_book_rounded;
-    final isBreak = block.type == 'break';
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.symmetric(
           horizontal: AppSpacing.space4, vertical: AppSpacing.space2),
-      color: isBreak ? AppColors.surfaceVariant : cs.surface,
-      elevation: isBreak ? 0 : 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusCompactCard),
-        side: isBreak
-            ? BorderSide.none
-            : BorderSide(color: AppColors.outline, width: 0.5),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(38),
+            offset: const Offset(0, 2),
+            blurRadius: 8,
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(
@@ -71,7 +66,7 @@ class DraftBlockCard extends StatelessWidget {
                   Text(block.endTime,
                       style: tt.labelSmall?.copyWith(
                         fontFeatures: const [FontFeature.tabularFigures()],
-                        color: AppColors.onSurfaceVariant,
+                        color: cs.onSurfaceVariant,
                       )),
                 ],
               ),
@@ -100,18 +95,21 @@ class DraftBlockCard extends StatelessWidget {
                   Text(block.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w500)),
+                      style: tt.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: cs.onSurface,
+                      )),
                   if (block.subject != null)
                     Container(
                       margin: const EdgeInsets.only(top: 2),
                       padding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.space2, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryContainer,
+                        color: cs.primary.withAlpha(30),
                         borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
                       ),
                       child: Text(block.subject!,
-                          style: tt.labelSmall?.copyWith(color: AppColors.primary)),
+                          style: tt.labelSmall?.copyWith(color: cs.primary)),
                     ),
                 ],
               ),
@@ -122,19 +120,19 @@ class DraftBlockCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.space2, vertical: 2),
               decoration: BoxDecoration(
-                color: AppColors.surfaceVariant,
+                color: cs.primaryContainer,
                 borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
               ),
               child: Text('${block.durationMinutes}m',
-                  style: tt.labelSmall?.copyWith(color: AppColors.onSurfaceVariant)),
+                  style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
             ),
             const SizedBox(width: AppSpacing.space2),
 
-            // Drag handle (ReorderableListView needs this)
+            // Drag handle
             ReorderableDragStartListener(
               index: index,
               child: Icon(Icons.drag_handle_rounded,
-                  size: 20, color: AppColors.onSurfaceVariant),
+                  size: 20, color: cs.onSurfaceVariant),
             ),
           ],
         ),

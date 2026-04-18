@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../bloc/session_bloc.dart';
+import '../../../../core/services/overlay_service.dart';
 
 class ActiveSessionScreen extends StatefulWidget {
   final String? taskId;
@@ -31,7 +32,6 @@ class ActiveSessionScreen extends StatefulWidget {
 }
 
 class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTickerProviderStateMixin {
-  Timer? _ticker;
   late AnimationController _pulseController;
 
   @override
@@ -41,6 +41,9 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTi
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
+
+    // Hide floating bubble if it exists when entering full screen
+    OverlayService.instance.hide();
 
     if (widget.isResume) {
       context.read<SessionBloc>().add(
@@ -61,27 +64,10 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTi
             ),
           );
     }
-    
-    _ticker = Timer.periodic(const Duration(seconds: 1), (timer) {
-      final state = context.read<SessionBloc>().state;
-      int currentElapsed = 0;
-      if (state is SessionRunning) {
-        currentElapsed = state.elapsedSeconds;
-      } else if (state is SessionPaused) {
-        currentElapsed = state.elapsedSeconds;
-      } else if (state is SessionOvertime) {
-        currentElapsed = state.session.plannedDuration + state.overtimeSeconds;
-      }
-
-      if (state is SessionRunning || state is SessionOvertime) {
-        context.read<SessionBloc>().add(TickEvent(currentElapsed + 1));
-      }
-    });
   }
 
   @override
   void dispose() {
-    _ticker?.cancel();
     _pulseController.dispose();
     super.dispose();
   }
@@ -130,6 +116,9 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTi
         if (state is SessionError) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.message), backgroundColor: cs.error));
         }
+        if (state is SessionComplete) {
+          OverlayService.instance.hide();
+        }
       },
       builder: (context, state) {
         if (state is SessionComplete) {
@@ -157,7 +146,7 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTi
         }
 
         final int totalPlannedSec = widget.plannedDurationMinutes * 60;
-        final progress = (elapsed / totalPlannedSec).clamp(0.0, 1.0);
+        final progress = totalPlannedSec > 0 ? (elapsed / totalPlannedSec).clamp(0.0, 1.0) : 0.0;
         final remainingSec = math.max(0, totalPlannedSec - elapsed);
         
         // --- Label Logic ---
@@ -176,9 +165,13 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTi
 
         // --- Ring Logic ---
         Color ringColor = cs.primary;
-        if (isPaused) ringColor = AppColors.warning;
-        else if (isOvertime) ringColor = Colors.green;
-        else if (progress > 0.75) ringColor = cs.error;
+        if (isPaused) {
+          ringColor = AppColors.warning;
+        } else if (isOvertime) {
+          ringColor = Colors.green;
+        } else if (progress > 0.75) {
+          ringColor = cs.error;
+        }
 
         return Scaffold(
           backgroundColor: cs.surface,
@@ -187,7 +180,17 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTi
             elevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.close),
-              onPressed: _handleManualEnd,
+              onPressed: () {
+                OverlayService.instance.showMinimizedFocus(
+                  context: context,
+                  taskTitle: widget.taskTitle,
+                  plannedMinutes: widget.plannedDurationMinutes,
+                  taskId: widget.taskId,
+                  skill: widget.skill,
+                  day: widget.day,
+                );
+                Navigator.pop(context);
+              },
             ),
             title: const Text('Focus Engine'),
             centerTitle: true,
@@ -269,7 +272,9 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> with SingleTi
                     _StatItem(label: "Pauses", value: "$pauses", icon: Icons.pause_circle_outline),
                     _StatItem(
                         label: "Efficiency",
-                        value: "${(( ( (elapsed + overtimeSec) / totalPlannedSec ) * (1.0 - (pauses * 0.1)) ) * 100).toInt()}%",
+                        value: totalPlannedSec > 0 
+                            ? "${((((elapsed + overtimeSec) / totalPlannedSec) * (1.0 - (pauses * 0.1))) * 100).toInt()}%"
+                            : "0%",
                         icon: Icons.bolt),
                     _StatItem(
                         label: "Goal",

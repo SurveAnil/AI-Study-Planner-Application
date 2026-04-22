@@ -1,4 +1,7 @@
 import 'package:get_it/get_it.dart';
+import '../../features/auth/data/auth_repository.dart';
+import '../../features/auth/data/auth_repository_impl.dart';
+import '../../features/auth/bloc/auth_cubit.dart';
 
 import '../database/database_helper.dart';
 import '../network/dio_client.dart';
@@ -136,6 +139,11 @@ Future<void> init() async {
     () => AiChatRepository(sl<DioClient>()),
   );
 
+  // AuthRepository
+  sl.registerLazySingleton<AuthRepository>(
+    () => AuthRepositoryImpl(),
+  );
+
   // SettingsRepository is already registered above (before DioClient).
 
   // ─── BLoCs / Cubits — factories (new instance per route) ─────────
@@ -204,5 +212,9 @@ Future<void> init() async {
 
   sl.registerFactory<SettingsCubit>(
     () => SettingsCubit(repository: sl<SettingsRepository>()),
+  );
+
+  sl.registerFactory<AuthCubit>(
+    () => AuthCubit(repository: sl<AuthRepository>()),
   );
 }

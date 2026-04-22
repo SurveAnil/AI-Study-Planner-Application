@@ -3,8 +3,6 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../../core/constants/app_spacing.dart';
 import '../../../roadmap/data/roadmap_local_service.dart';
-import '../../../roadmap/presentation/roadmap_input_screen.dart';
-import '../../../roadmap/presentation/roadmap_screen.dart';
 import '../../../roadmap/presentation/ai_roadmap_main_screen.dart';
 import '../../../plan_draft/presentation/day_plan_editor_screen.dart';
 
@@ -22,9 +20,9 @@ class QuickActionGrid extends StatelessWidget {
         const SizedBox(height: 16),
         Text(
           'Quick Actions',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: AppSpacing.space4),
         GridView(
@@ -74,9 +72,7 @@ class QuickActionGrid extends StatelessWidget {
   void _handleAiRoadmapTap(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => const AiRoadmapMainScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const AiRoadmapMainScreen()),
     );
   }
 
@@ -89,15 +85,15 @@ class QuickActionGrid extends StatelessWidget {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => DayPlanEditorScreen(
-            skill: activeSkill,
-            initialDay: 1,
-          ),
+          builder: (context) =>
+              DayPlanEditorScreen(skill: activeSkill, initialDay: 1),
         ),
       );
     } else if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No active skill found. Create a roadmap first!')),
+        const SnackBar(
+          content: Text('No active skill found. Create a roadmap first!'),
+        ),
       );
     }
   }
@@ -141,10 +137,7 @@ class _ActionTileState extends State<_ActionTile> {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: Colors.white.withOpacity(0.08), width: 1),
             gradient: LinearGradient(
-              colors: [
-                widget.color.withOpacity(0.15),
-                Colors.transparent,
-              ],
+              colors: [widget.color.withOpacity(0.15), Colors.transparent],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -175,9 +168,9 @@ class _ActionTileState extends State<_ActionTile> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: cs.onSurface,
-                          ),
+                        fontWeight: FontWeight.w700,
+                        color: cs.onSurface,
+                      ),
                     ),
                   ],
                 ),

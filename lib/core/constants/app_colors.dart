@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 /// DO NOT USE HARDCODED COLORS. USE THEME CONTEXT: `Theme.of(context).colorScheme.*`
 abstract final class AppColors {
   // ─── Surfaces & Backgrounds ───────────────────────────────────────────
-  static const Color background = Color.fromARGB(255, 235, 236, 239);
-  static const Color surface = Color.fromARGB(255, 223, 226, 232);
-  static const Color surfaceElevated = Color.fromARGB(255, 36, 51, 83);
+  static const Color background = Color(0xFF0F141E);
+  static const Color surface = Color(0xFF1A202C);
+  static const Color surfaceElevated = Color(0xFF1E293B);
 
   // ─── Brand Colors ───────────────────────────────────────────────────
   static const Color primary = Color(0xFF6366F1);

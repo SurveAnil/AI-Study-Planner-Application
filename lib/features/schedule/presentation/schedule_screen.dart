@@ -140,8 +140,17 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       builder: (context, state) {
         return Scaffold(
           appBar: AppBar(
-            title: Text(state.skill.isEmpty ? 'Schedule' : 'Day ${state.selectedDay} — ${state.skill}'),
-            centerTitle: false,
+            scrolledUnderElevation: 0,
+            backgroundColor: Colors.transparent,
+            centerTitle: true,
+            title: Text(
+              state.skill.isEmpty ? 'Schedule' : 'Day ${state.selectedDay} — ${state.skill}',
+              style: const TextStyle(
+                fontFamily: 'Manrope',
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           body: _buildBody(state),
           bottomNavigationBar: _buildBottomAction(state),
@@ -389,25 +398,29 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       children: [
         _buildProgressBar(state),
         Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: state.tasks.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) => _TaskCard(
-              task: state.tasks[index],
-              day: state.selectedDay,
-              onTaskComplete: () => context.read<ScheduleCubit>().completeTask(
-                    state.skill,
-                    state.selectedDay,
-                    state.tasks[index]['original_index'] as int? ?? index,
-                    (state.tasks[index]['task_id'] ?? '').toString(),
-                  ),
-              onTaskSkip: () => context.read<ScheduleCubit>().skipTask(
-                    state.skill,
-                    state.selectedDay,
-                    state.tasks[index]['original_index'] as int? ?? index,
-                    (state.tasks[index]['task_id'] ?? '').toString(),
-                  ),
+          child: RepaintBoundary(
+            child: ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: state.tasks.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) => RepaintBoundary(
+                child: _TaskCard(
+                  task: state.tasks[index],
+                  day: state.selectedDay,
+                  onTaskComplete: () => context.read<ScheduleCubit>().completeTask(
+                        state.skill,
+                        state.selectedDay,
+                        state.tasks[index]['original_index'] as int? ?? index,
+                        (state.tasks[index]['task_id'] ?? '').toString(),
+                      ),
+                  onTaskSkip: () => context.read<ScheduleCubit>().skipTask(
+                        state.skill,
+                        state.selectedDay,
+                        state.tasks[index]['original_index'] as int? ?? index,
+                        (state.tasks[index]['task_id'] ?? '').toString(),
+                      ),
+                ),
+              ),
             ),
           ),
         ),
@@ -472,6 +485,25 @@ class _TaskCard extends StatefulWidget {
 }
 
 class _TaskCardState extends State<_TaskCard> {
+  // ── Static cached decorations — allocated once, not per-frame ──────────
+  static const _kActiveDecoration = BoxDecoration(
+    color: Color(0x0DFFFFFF), // white 5%
+    borderRadius: BorderRadius.all(Radius.circular(16)),
+  );
+  static const _kDoneDecoration = BoxDecoration(
+    color: Color(0x05FFFFFF), // white 2%
+    borderRadius: BorderRadius.all(Radius.circular(16)),
+  );
+  static const _kActiveBorder =
+      Border.fromBorderSide(BorderSide(color: Color(0x14FFFFFF), width: 1)); // 8%
+  static const _kDoneBorder =
+      Border.fromBorderSide(BorderSide(color: Color(0x0AFFFFFF), width: 1)); // 4%
+  static const _kShadow = BoxShadow(
+    color: Color(0x1A000000), // black 10%
+    blurRadius: 10,
+    offset: Offset(0, 4),
+  );
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -487,23 +519,9 @@ class _TaskCardState extends State<_TaskCard> {
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-      decoration: BoxDecoration(
-        color: isDone 
-            ? Colors.white.withOpacity(0.02) 
-            : Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withOpacity(isDone ? 0.04 : 0.08),
-          width: 1,
-        ),
-        boxShadow: [
-          if (!isDone)
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-        ],
+      decoration: (isDone ? _kDoneDecoration : _kActiveDecoration).copyWith(
+        border: isDone ? _kDoneBorder : _kActiveBorder,
+        boxShadow: isDone ? null : const [_kShadow],
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),

@@ -93,4 +93,40 @@ class AuthCubit extends Cubit<ProfileState> {
       )),
     );
   }
+
+  Future<void> login(String email, String password) async {
+    emit(state.copyWith(isLoading: true));
+
+    final result = await _repository.login(email, password);
+    result.fold(
+      (failure) => emit(state.copyWith(
+        isLoading: false,
+        errorMessage: failure.message,
+      )),
+      (user) => emit(state.copyWith(
+        user: user,
+        isSetup: true,
+        isLoading: false,
+        errorMessage: null,
+      )),
+    );
+  }
+
+  Future<void> signUp(String name, String email, String password) async {
+    emit(state.copyWith(isLoading: true));
+
+    final result = await _repository.signUp(name, email, password);
+    result.fold(
+      (failure) => emit(state.copyWith(
+        isLoading: false,
+        errorMessage: failure.message,
+      )),
+      (user) => emit(state.copyWith(
+        user: user,
+        isSetup: true,
+        isLoading: false,
+        errorMessage: null,
+      )),
+    );
+  }
 }

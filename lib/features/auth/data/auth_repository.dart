@@ -81,4 +81,8 @@ abstract class AuthRepository {
   Future<Either<Failure, UserProfile>> setupProfile(ProfileSetupData data);
   Future<Either<Failure, UserProfile?>> loadProfile();
   Future<Either<Failure, bool>> isProfileSetup();
+  
+  // New methods for the Login Function
+  Future<Either<Failure, UserProfile>> login(String email, String password);
+  Future<Either<Failure, UserProfile>> signUp(String name, String email, String password);
 }

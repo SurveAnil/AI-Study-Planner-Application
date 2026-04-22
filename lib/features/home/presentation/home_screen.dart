@@ -6,8 +6,8 @@ import '../../ai_chat/presentation/ai_chat_screen.dart';
 import 'widgets/greeting_card.dart';
 import 'widgets/quick_stats_row.dart';
 import 'widgets/quick_action_grid.dart';
-import 'widgets/ai_banner.dart';
 import 'package:ai_study_planner/features/home/presentation/main_nav_screen.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 /// Screen S03: Home Dashboard
 ///
@@ -82,7 +82,59 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
+      appBar: AppBar(
+        scrolledUnderElevation: 0,
+        backgroundColor: Colors.transparent,
+        centerTitle: true,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Center(
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.1),
+                  width: 1.5,
+                ),
+              ),
+              child: const Icon(
+                Symbols.person_filled_rounded,
+                size: 20,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+        title: Text(
+          'KanMantr AI',
+          style: TextStyle(
+            fontFamily: 'Manrope',
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            color: cs.onSurface,
+            letterSpacing: -0.5,
+          ),
+        ),
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: Icon(
+              Symbols.notifications_active_rounded,
+              color: cs.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _loadSavedData,
@@ -176,14 +228,18 @@ class _ActiveSkillSelector extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.school_rounded, color: cs.primary.withAlpha(120), size: 20),
+              Icon(
+                Icons.school_rounded,
+                color: cs.primary.withAlpha(120),
+                size: 20,
+              ),
               const SizedBox(width: 12),
               Text(
                 'Focusing on',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: cs.onSurfaceVariant.withAlpha(200),
-                      fontWeight: FontWeight.w500,
-                    ),
+                  color: cs.onSurfaceVariant.withAlpha(200),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
@@ -197,23 +253,25 @@ class _ActiveSkillSelector extends StatelessWidget {
                 isDense: true,
                 isExpanded: true,
                 alignment: Alignment.centerRight,
-                icon: Icon(Icons.expand_more_rounded,
-                    color: cs.primary, size: 20),
+                icon: Icon(
+                  Icons.expand_more_rounded,
+                  color: cs.primary,
+                  size: 20,
+                ),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: cs.onSurface,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  color: cs.onSurface,
+                  fontWeight: FontWeight.w700,
+                ),
                 borderRadius: BorderRadius.circular(16),
                 dropdownColor: cs.surfaceContainerHigh,
                 items: skills
-                    .map((s) => DropdownMenuItem(
-                          value: s,
-                          alignment: Alignment.centerRight,
-                          child: Text(
-                            s,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ))
+                    .map(
+                      (s) => DropdownMenuItem(
+                        value: s,
+                        alignment: Alignment.centerRight,
+                        child: Text(s, overflow: TextOverflow.ellipsis),
+                      ),
+                    )
                     .toList(),
                 onChanged: (v) {
                   if (v != null) onChanged(v);
@@ -235,10 +293,7 @@ class _ContinueLearningCard extends StatelessWidget {
   final Map<String, dynamic> roadmap;
   final int resumeDay;
 
-  const _ContinueLearningCard({
-    required this.roadmap,
-    required this.resumeDay,
-  });
+  const _ContinueLearningCard({required this.roadmap, required this.resumeDay});
 
   @override
   Widget build(BuildContext context) {
@@ -249,10 +304,7 @@ class _ContinueLearningCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
         gradient: LinearGradient(
-          colors: [
-            cs.primary.withAlpha(40),
-            Colors.transparent,
-          ],
+          colors: [cs.primary.withAlpha(40), Colors.transparent],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -264,9 +316,7 @@ class _ContinueLearningCard extends StatelessWidget {
         onTap: () {
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(
-              builder: (_) => MainNavScreen(initialIndex: 1),
-            ),
+            MaterialPageRoute(builder: (_) => MainNavScreen(initialIndex: 1)),
             (route) => false,
           );
         },
@@ -287,21 +337,23 @@ class _ContinueLearningCard extends StatelessWidget {
                           'CONTINUE LEARNING',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: cs.primary,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.5,
-                          ),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: cs.primary,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.5,
+                              ),
                         ),
                         const SizedBox(height: 12),
                         Text(
                           skill,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: cs.onSurface,
-                          ),
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: cs.onSurface,
+                              ),
                         ),
                       ],
                     ),
@@ -321,8 +373,11 @@ class _ContinueLearningCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: const Icon(Icons.play_arrow_rounded,
-                        color: Colors.white, size: 32),
+                    child: const Icon(
+                      Icons.play_arrow_rounded,
+                      color: Colors.white,
+                      size: 32,
+                    ),
                   ),
                 ],
               ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
@@ -8,6 +9,8 @@ import 'core/constants/app_colors.dart';
 import 'core/database/database_helper.dart';
 import 'core/di/injection_container.dart' as di;
 import 'features/home/presentation/main_nav_screen.dart';
+import 'features/auth/presentation/onboarding_screen.dart';
+import 'features/auth/presentation/login_screen.dart';
 
 // Import Cubits manually right now to wrap the App
 import 'features/plan_draft/bloc/plan_draft_bloc.dart';
@@ -19,6 +22,7 @@ import 'features/revision/bloc/revision_calendar_cubit.dart';
 import 'features/progress/bloc/progress_cubit.dart';
 import 'features/ai_chat/bloc/ai_chat_cubit.dart';
 import 'features/settings/bloc/settings_cubit.dart';
+import 'features/auth/bloc/auth_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,14 +33,19 @@ void main() async {
   // Initialize dependency injection
   await di.init();
 
-  runApp(const StudyPlannerApp());
+  // Check if it's the first launch
+  final prefs = await SharedPreferences.getInstance();
+  final showHome = prefs.getBool('showHome') ?? false;
+
+  runApp(StudyPlannerApp(showHome: showHome));
 }
 
 final _uuid = const Uuid();
 final _testUserId = _uuid.v4(); // Temporary placeholder until Authentication sprint
 
 class StudyPlannerApp extends StatelessWidget {
-  const StudyPlannerApp({super.key});
+  final bool showHome;
+  const StudyPlannerApp({super.key, required this.showHome});
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +60,7 @@ class StudyPlannerApp extends StatelessWidget {
         BlocProvider(create: (_) => di.sl<AiChatCubit>(param1: _testUserId)),
         BlocProvider(create: (_) => di.sl<ProgressCubit>()),
         BlocProvider(create: (_) => di.sl<SettingsCubit>()..loadSettings()),
+        BlocProvider(create: (_) => di.sl<AuthCubit>()..loadProfile()),
       ],
       child: MaterialApp(
       title: 'AI Study Planner',
@@ -113,8 +123,8 @@ class StudyPlannerApp extends StatelessWidget {
 
       themeMode: ThemeMode.dark, // Enforce Dark Theme
 
-      // Wrap the app with MainNavScreen
-      home: const MainNavScreen(),
+      // Route based on the first-time marker
+      home: showHome ? const LoginScreen() : const OnboardingScreen(),
     ));
   }
 }

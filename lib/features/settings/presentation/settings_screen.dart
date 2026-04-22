@@ -57,41 +57,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: cs.surface,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70),
-        child: SafeArea(
-          bottom: false,
-          child: Container(
-            color: cs.surface,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const SizedBox(
-                  width: 40,
-                ), // Balance the flex for centering title
-                Text(
-                  'System Preferences',
-                  style: TextStyle(
-                    fontFamily: 'Manrope',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: -0.3,
-                    color: cs.onSurface,
-                  ),
-                ),
-                _PressableIcon(
-                  onTap: () {},
-                  child: Icon(
-                    Symbols.more_vert_rounded,
-                    color: cs.onSurfaceVariant,
-                    size: 22,
-                  ),
-                ),
-              ],
-            ),
+      appBar: AppBar(
+        scrolledUnderElevation: 0,
+        backgroundColor: Colors.transparent,
+        centerTitle: true,
+        title: Text(
+          'System Preferences',
+          style: TextStyle(
+            fontFamily: 'Manrope',
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: cs.onSurface,
           ),
         ),
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: Icon(
+              Symbols.more_vert_rounded,
+              color: cs.onSurfaceVariant,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: BlocBuilder<SettingsCubit, SettingsState>(
         builder: (context, state) {
@@ -242,7 +231,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white.withOpacity(0.08), width: 1),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.08),
+                  width: 1,
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -630,30 +622,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(15),
             child: Column(
-            children: [
-              _SettingsTile(
-                icon: Symbols.notifications_active_rounded,
-                title: 'Notification Windows',
-                subtitle: '08:00 - 20:00',
-                cs: cs,
-                trailing: Icon(
-                  Symbols.chevron_right_rounded,
-                  color: cs.onSurfaceVariant,
+              children: [
+                _SettingsTile(
+                  icon: Symbols.notifications_active_rounded,
+                  title: 'Notification Windows',
+                  subtitle: '08:00 - 20:00',
+                  cs: cs,
+                  trailing: Icon(
+                    Symbols.chevron_right_rounded,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 1),
-              _SettingsTile(
-                icon: Symbols.hourglass_empty_rounded,
-                title: 'Deep Focus Duration',
-                subtitle: '45 Minutes',
-                cs: cs,
-                trailing: Icon(
-                  Symbols.chevron_right_rounded,
-                  color: cs.onSurfaceVariant,
+                const SizedBox(height: 1),
+                _SettingsTile(
+                  icon: Symbols.hourglass_empty_rounded,
+                  title: 'Deep Focus Duration',
+                  subtitle: '45 Minutes',
+                  cs: cs,
+                  trailing: Icon(
+                    Symbols.chevron_right_rounded,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
           ),
         ),
       ],
@@ -693,53 +685,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(15),
             child: Column(
-            children: [
-              _SettingsTile(
-                icon: Symbols.dark_mode_rounded,
-                title: 'Midnight Precision Theme',
-                subtitle: 'Force Dark UI Elements',
-                cs: cs,
-                trailing: Switch(
-                  value: settings.darkModeEnabled,
-                  onChanged: (val) =>
-                      context.read<SettingsCubit>().toggleDarkMode(),
-                  activeColor: Colors.white,
-                  activeTrackColor: cs.primary,
+              children: [
+                _SettingsTile(
+                  icon: Symbols.dark_mode_rounded,
+                  title: 'Midnight Precision Theme',
+                  subtitle: 'Force Dark UI Elements',
+                  cs: cs,
+                  trailing: Switch(
+                    value: settings.darkModeEnabled,
+                    onChanged: (val) =>
+                        context.read<SettingsCubit>().toggleDarkMode(),
+                    activeColor: Colors.white,
+                    activeTrackColor: cs.primary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 1),
-              _SettingsTile(
-                icon: Symbols.cloud_sync_rounded,
-                title: 'Cloud Backup',
-                subtitle: 'Last synced 2h ago',
-                cs: cs,
-                trailing: TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    'SYNC NOW',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: cs.primary,
-                      letterSpacing: 1.0,
+                const SizedBox(height: 1),
+                _SettingsTile(
+                  icon: Symbols.cloud_sync_rounded,
+                  title: 'Cloud Backup',
+                  subtitle: 'Last synced 2h ago',
+                  cs: cs,
+                  trailing: TextButton(
+                    onPressed: () {},
+                    child: Text(
+                      'SYNC NOW',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: cs.primary,
+                        letterSpacing: 1.0,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 1),
-              _SettingsTile(
-                icon: Symbols.delete_rounded,
-                title: 'Clear Cache',
-                subtitle: '142 MB Used',
-                cs: cs,
-                trailing: Icon(
-                  Symbols.chevron_right_rounded,
-                  color: cs.onSurfaceVariant,
+                const SizedBox(height: 1),
+                _SettingsTile(
+                  icon: Symbols.delete_rounded,
+                  title: 'Clear Cache',
+                  subtitle: '142 MB Used',
+                  cs: cs,
+                  trailing: Icon(
+                    Symbols.chevron_right_rounded,
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
           ),
         ),
       ],
@@ -857,6 +849,7 @@ class _SettingsTile extends StatelessWidget {
     required this.cs,
   });
 
+  @override
   Widget build(BuildContext context) {
     return Container(
       color: Colors.transparent,

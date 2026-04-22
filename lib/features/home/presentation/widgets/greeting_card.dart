@@ -13,90 +13,89 @@ class GreetingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.space8), // 32 is slightly above 28, I'll use 28 if I can or 24. space6=24, space8=32. I'll use 28 if possible but sticking to scale: 24 (space6) or something near. User said 24-28. I'll use 24.
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.surfaceElevated,
-            AppColors.surface,
+            cs.surfaceContainerHigh.withOpacity(0.8),
+            cs.surface.withOpacity(0.9),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusHeroCard),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.05), width: 1),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.15),
-            blurRadius: 30,
-            spreadRadius: -10,
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(24), // Explicit 24-28 as requested
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    DateFormat('EEEE, MMMM d').format(DateTime.now()),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: cs.onSurfaceVariant.withAlpha(180),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.space1),
-                  Text(
-                    'Good Morning,\nAnil!',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: cs.onSurface,
-                      fontWeight: FontWeight.w700,
-                      height: 1.2,
-                    ),
-                  ),
-                ],
-              ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Left Column (Greeting)
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  DateFormat('EEEE, MMMM d').format(DateTime.now()),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: cs.onSurfaceVariant.withOpacity(0.7),
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.5,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Good Morning, Anil!',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: cs.onSurface,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
+                      ),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            // Streak Badge
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.space4),
-              decoration: BoxDecoration(
-                color: cs.primary.withAlpha(38), // 0.15 opacity
-                shape: BoxShape.circle,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Symbols.local_fire_department_rounded,
-                    color: cs.primary,
-                    fill: 1,
-                    size: 28,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '12',
-                    maxLines: 1,
-                    overflow: TextOverflow.clip,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: cs.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          ],
-        ),
+          ),
+          const SizedBox(width: 16),
+          // Right Alignment (Badge)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Symbols.local_fire_department_rounded,
+                  color: cs.primary,
+                  fill: 1,
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '12',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: cs.onSurface,
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

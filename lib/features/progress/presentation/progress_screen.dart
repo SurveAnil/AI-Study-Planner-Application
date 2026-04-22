@@ -37,40 +37,27 @@ class _ProgressScreenState extends State<ProgressScreen> {
     return Scaffold(
       backgroundColor: cs.surface,
       // ── Custom header matching Settings screen style ────────────────
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70),
-        child: SafeArea(
-          bottom: false,
-          child: Container(
-            color: cs.surface,
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const SizedBox(width: 40),
-                Text(
-                  'Intelligence',
-                  style: TextStyle(
-                    fontFamily: 'Manrope',
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
-                    color: cs.onSurface,
-                  ),
-                ),
-                InkWell(
-                  onTap: _loadReport,
-                  borderRadius: BorderRadius.circular(100),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Icon(Symbols.refresh_rounded,
-                        color: cs.onSurfaceVariant, size: 22),
-                  ),
-                ),
-              ],
-            ),
+      appBar: AppBar(
+        scrolledUnderElevation: 0,
+        backgroundColor: Colors.transparent,
+        centerTitle: true,
+        title: Text(
+          'Intelligence',
+          style: TextStyle(
+            fontFamily: 'Manrope',
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: cs.onSurface,
           ),
         ),
+        actions: [
+          IconButton(
+            onPressed: _loadReport,
+            icon: Icon(Symbols.refresh_rounded,
+                color: cs.onSurfaceVariant, size: 22),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: BlocBuilder<ProgressCubit, ProgressState>(
         builder: (context, state) {

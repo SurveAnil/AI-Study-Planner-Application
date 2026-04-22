@@ -19,8 +19,8 @@ class _DailyTask {
   String type; // learn | practice | project
   String description;
   int durationMinutes;
-  String? taskId;        // Preserved from JSON
-  int originalDuration;  // To detect changes
+  String? taskId; // Preserved from JSON
+  int originalDuration; // To detect changes
 
   _DailyTask({
     required this.title,
@@ -98,9 +98,7 @@ class _DayPlanEditorScreenState extends State<DayPlanEditorScreen> {
     try {
       // 1. Ensure we have a roadmap (fetch from DB if missing from constructor)
       Map<String, dynamic>? roadmap = widget.roadmap;
-      if (roadmap == null) {
-        roadmap = await RoadmapLocalService.instance.getRoadmapForSkill(_skill);
-      }
+      roadmap ??= await RoadmapLocalService.instance.getRoadmapForSkill(_skill);
 
       if (roadmap == null) {
         setState(() {
@@ -229,21 +227,23 @@ class _DayPlanEditorScreenState extends State<DayPlanEditorScreen> {
                   task.durationMinutes;
               if (newTitle.isNotEmpty) {
                 // Check if duration changed
-                if (newDuration != task.originalDuration && task.taskId != null) {
-                   // User edited time -> Mark as paused to allow Resume
-                   final dbSvc = RoadmapLocalService.instance;
-                   // Re-fetch current status
-                   final progress = await dbSvc.getDailyPlan(widget.skill, _day);
-                   final currentStatus = progress?['status'] as String? ?? 'pending';
-                   
-                   // Update status specifically in task_progress table
-                   await dbSvc.updateTaskStatus(
-                     widget.skill, 
-                     _day, 
-                     index, 
-                     task.taskId!, 
-                     'paused', // Set to paused so UI shows "Resume"
-                   );
+                if (newDuration != task.originalDuration &&
+                    task.taskId != null) {
+                  // User edited time -> Mark as paused to allow Resume
+                  final dbSvc = RoadmapLocalService.instance;
+                  // Re-fetch current status
+                  final progress = await dbSvc.getDailyPlan(widget.skill, _day);
+                  final currentStatus =
+                      progress?['status'] as String? ?? 'pending';
+
+                  // Update status specifically in task_progress table
+                  await dbSvc.updateTaskStatus(
+                    widget.skill,
+                    _day,
+                    index,
+                    task.taskId!,
+                    'paused', // Set to paused so UI shows "Resume"
+                  );
                 }
 
                 setState(() {
@@ -345,10 +345,17 @@ class _DayPlanEditorScreenState extends State<DayPlanEditorScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('Day $_day — $_skill'),
-        backgroundColor: cs.primaryContainer,
-        foregroundColor: cs.onPrimaryContainer,
-        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: Colors.transparent,
+        centerTitle: true,
+        title: Text(
+          'Review Plan — Day $_day',
+          style: const TextStyle(
+            fontFamily: 'Manrope',
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: _buildBody(context, cs),
       bottomNavigationBar: (!_loading && _error == null)

@@ -8,6 +8,7 @@ import '../../../features/roadmap/presentation/roadmap_input_screen.dart';
 import '../bloc/plan_draft_bloc.dart';
 import '../../schedule/bloc/schedule_cubit.dart';
 import 'manual_plan_form_screen.dart';
+import '../../../core/di/injection_container.dart' as di;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Model
@@ -134,7 +135,7 @@ class _DayPlanEditorScreenState extends State<DayPlanEditorScreen> {
       print("Generating plan from API");
 
       // 3. No cache — call backend
-      final dioClient = DioClient();
+      final dioClient = di.sl<DioClient>();
       final dio = dioClient.dio;
       await dioClient.warmup();
 

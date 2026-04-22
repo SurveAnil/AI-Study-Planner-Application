@@ -89,6 +89,21 @@ class SettingsCubit extends Cubit<SettingsState> {
     await _saveSettings(updated);
   }
 
+  Future<void> updateAiModel(String model) async {
+    final updated = state.settings.copyWith(aiModel: model);
+    await _saveSettings(updated);
+  }
+
+  Future<void> toggleUseCustomApi(bool enabled) async {
+    final updated = state.settings.copyWith(useCustomApi: enabled);
+    await _saveSettings(updated);
+  }
+
+  Future<void> updateOpenRouterApiKey(String key) async {
+    final updated = state.settings.copyWith(openRouterApiKey: key);
+    await _saveSettings(updated);
+  }
+
   Future<void> _saveSettings(UserSettings settings) async {
     final result = await _repository.updateSettings(settings);
     result.fold(

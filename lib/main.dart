@@ -18,6 +18,7 @@ import 'features/progress/bloc/subject_analytics_cubit.dart';
 import 'features/revision/bloc/revision_calendar_cubit.dart';
 import 'features/progress/bloc/progress_cubit.dart';
 import 'features/ai_chat/bloc/ai_chat_cubit.dart';
+import 'features/settings/bloc/settings_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,6 +50,7 @@ class StudyPlannerApp extends StatelessWidget {
         BlocProvider(create: (_) => di.sl<RevisionCalendarCubit>(param1: _testUserId)),
         BlocProvider(create: (_) => di.sl<AiChatCubit>(param1: _testUserId)),
         BlocProvider(create: (_) => di.sl<ProgressCubit>()),
+        BlocProvider(create: (_) => di.sl<SettingsCubit>()..loadSettings()),
       ],
       child: MaterialApp(
       title: 'AI Study Planner',

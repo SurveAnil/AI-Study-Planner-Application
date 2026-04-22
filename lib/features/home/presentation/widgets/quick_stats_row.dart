@@ -34,6 +34,7 @@ class QuickStatsRow extends StatelessWidget {
                 icon: Symbols.schedule_rounded,
                 label: 'Studied',
                 value: timeString,
+                accentOpacity: 0.3,
               ),
             ),
             const SizedBox(width: AppSpacing.space3),
@@ -42,6 +43,7 @@ class QuickStatsRow extends StatelessWidget {
                 icon: Symbols.check_circle_rounded,
                 label: 'Tasks',
                 value: '$completedTasks/$totalTasks',
+                accentOpacity: 0.5,
               ),
             ),
             const SizedBox(width: AppSpacing.space3),
@@ -50,6 +52,7 @@ class QuickStatsRow extends StatelessWidget {
                 icon: Symbols.monitoring_rounded,
                 label: 'Consistency',
                 value: '${consistenty.toStringAsFixed(0)}%',
+                accentOpacity: 0.8,
               ),
             ),
           ],
@@ -63,11 +66,13 @@ class _StatCard extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
+  final double accentOpacity;
 
   const _StatCard({
     required this.icon,
     required this.label,
     required this.value,
+    this.accentOpacity = 0.5,
   });
 
   @override
@@ -89,7 +94,7 @@ class _StatCard extends StatelessWidget {
             bottom: 0,
             child: Container(
               width: 3,
-              color: cs.primary.withAlpha(80),
+              color: AppColors.primary.withOpacity(accentOpacity),
             ),
           ),
           Padding(

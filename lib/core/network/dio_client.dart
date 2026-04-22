@@ -1,21 +1,22 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
-/// Dio HTTP client configured for the local Python FastAPI backend.
-/// Real device / local network: uses the host PC LAN IP.
+import '../../features/settings/data/settings_repository.dart';
+
+/// Dio HTTP client configured for the Python FastAPI backend.
+/// Injects X-OpenRouter-Key / X-OpenRouter-Model headers when
+/// the user has enabled their own API key via Settings.
 class DioClient {
   late final Dio dio;
+  final SettingsRepository settingsRepository;
 
   String getBaseUrl() {
-    // Phase 2: Use local backend to see subtasks, resources, and adaptivity!
     // For Android Emulator: "http://10.0.2.2:8765"
-    // For iOS/Physical Device: your computer's LAN IP (e.g. "http://192.168.1.5:8765")
-    // return "http://10.0.2.2:8765"; 
-    
+    // For iOS/Physical Device: your computer's LAN IP
     return "https://study-planner-app-backend.onrender.com";
   }
 
-  DioClient() {
+  DioClient({required this.settingsRepository}) {
     dio = Dio(
       BaseOptions(
         baseUrl: getBaseUrl(),
@@ -29,15 +30,38 @@ class DioClient {
       ),
     );
 
-    // Logging interceptor for debug builds
+    // ── Custom API key interceptor ─────────────────────────────────────
+    // Reads the latest settings synchronously from the in-memory cache
+    // and injects the appropriate headers on every request.
     dio.interceptors.add(
-      LogInterceptor(
-        requestBody: true,
-        responseBody: true,
-        error: true,
-        logPrint: (obj) => debugPrint('[DIO] $obj'),
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final settings = settingsRepository.currentSettings;
+          if (settings.useCustomApi &&
+              settings.openRouterApiKey != null &&
+              settings.openRouterApiKey!.isNotEmpty) {
+            options.headers['X-OpenRouter-Key'] = settings.openRouterApiKey!;
+            if (settings.aiModel != 'Default (Backend)') {
+              options.headers['X-OpenRouter-Model'] = settings.aiModel;
+            }
+            debugPrint('[DIO] Injecting custom OpenRouter headers.');
+          }
+          handler.next(options);
+        },
       ),
     );
+
+    // ── Logging (debug only) ───────────────────────────────────────────
+    if (kDebugMode) {
+      dio.interceptors.add(
+        LogInterceptor(
+          requestBody: true,
+          responseBody: true,
+          error: true,
+          logPrint: (obj) => debugPrint('[DIO] $obj'),
+        ),
+      );
+    }
   }
 
   /// Wake up the backend (Render cold start)

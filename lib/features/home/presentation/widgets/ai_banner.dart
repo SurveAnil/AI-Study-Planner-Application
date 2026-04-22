@@ -101,8 +101,9 @@ class _BannerCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.space4),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest, // FilledCard token
+        color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.08), width: 1),
       ),
       child: child,
     );

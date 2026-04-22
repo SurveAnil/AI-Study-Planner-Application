@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../schedule/presentation/schedule_screen.dart';
 import '../../progress/presentation/progress_screen.dart';
 import '../../roadmap/data/roadmap_local_service.dart';
+import '../../settings/presentation/settings_screen.dart';
 import 'package:ai_study_planner/features/home/presentation/home_screen.dart';
 
 /// The root scaffold for the application, providing bottom navigation.
@@ -37,8 +38,8 @@ class _MainNavScreenState extends State<MainNavScreen> {
   List<Widget> get _screens => [
     const HomeScreen(),
     const ScheduleScreen(),
-    ProgressScreen(skill: _activeSkill ?? 'Data Structures'), // Fallback if none active
-    const Scaffold(body: Center(child: Text('Settings (S14)'))),
+    ProgressScreen(skill: _activeSkill ?? 'Data Structures'),
+    const SettingsScreen(),
   ];
 
   @override
@@ -51,12 +52,12 @@ class _MainNavScreenState extends State<MainNavScreen> {
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: cs.outlineVariant.withAlpha(30),
-              width: 0.5,
-            ),
-          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 20,
+            )
+          ],
         ),
         child: NavigationBar(
           selectedIndex: _currentIndex,

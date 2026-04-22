@@ -163,8 +163,9 @@ class _ActiveSkillSelector extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.08), width: 1),
       ),
       child: Wrap(
         crossAxisAlignment: WrapCrossAlignment.center,
@@ -246,6 +247,7 @@ class _ContinueLearningCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
         gradient: LinearGradient(
           colors: [
             cs.primary.withAlpha(40),
@@ -255,7 +257,7 @@ class _ContinueLearningCard extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: cs.primary.withAlpha(40)),
+        border: Border.all(color: Colors.white.withOpacity(0.08), width: 1),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),

@@ -15,6 +15,10 @@ class DatabaseFailure extends Failure {
   const DatabaseFailure(super.message);
 }
 
+class CacheFailure extends Failure {
+  const CacheFailure(super.message);
+}
+
 class NetworkFailure extends Failure {
   const NetworkFailure(super.message);
 }

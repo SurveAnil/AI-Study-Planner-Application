@@ -26,6 +26,7 @@ import '../../features/progress/data/subject_analytics_repository_impl.dart';
 import '../../features/plan_draft/data/plan_draft_repository.dart';
 import '../../features/plan_draft/data/commit_service.dart';
 import '../../features/ai_chat/data/repositories/ai_chat_repository.dart';
+import '../../features/settings/data/settings_repository.dart';
 
 import '../../features/plan_draft/bloc/plan_draft_bloc.dart';
 import '../../features/schedule/bloc/schedule_cubit.dart';
@@ -38,6 +39,7 @@ import '../../features/progress/data/progress_repository_impl.dart';
 import '../../features/progress/data/analytics_aggregator.dart';
 import '../../features/progress/bloc/progress_cubit.dart';
 import '../../features/ai_chat/bloc/ai_chat_cubit.dart';
+import '../../features/settings/bloc/settings_cubit.dart';
 
 final sl = GetIt.instance;
 
@@ -47,8 +49,17 @@ Future<void> init() async {
   // ─── Core ───────────────────────────────────────────────────────────
 
   sl.registerLazySingleton<DatabaseHelper>(() => DatabaseHelper());
-  sl.registerLazySingleton<DioClient>(() => DioClient());
   sl.registerLazySingleton<NetworkInfo>(() => NetworkInfoImpl());
+
+  // SettingsRepository must be registered before DioClient so the
+  // API-key interceptor can resolve it at construction time.
+  sl.registerLazySingleton<SettingsRepository>(
+    () => SettingsRepositoryImpl(),
+  );
+
+  sl.registerLazySingleton<DioClient>(
+    () => DioClient(settingsRepository: sl<SettingsRepository>()),
+  );
   
   sl.registerLazySingleton<SyncQueueService>(
     () => SyncQueueService(networkInfo: sl<NetworkInfo>()),
@@ -125,6 +136,8 @@ Future<void> init() async {
     () => AiChatRepository(sl<DioClient>()),
   );
 
+  // SettingsRepository is already registered above (before DioClient).
+
   // ─── BLoCs / Cubits — factories (new instance per route) ─────────
 
   // RevisionCalendarCubit needs userId param
@@ -187,5 +200,9 @@ Future<void> init() async {
 
   sl.registerFactory<ProgressCubit>(
     () => ProgressCubit(repository: sl<ProgressRepository>()),
+  );
+
+  sl.registerFactory<SettingsCubit>(
+    () => SettingsCubit(repository: sl<SettingsRepository>()),
   );
 }

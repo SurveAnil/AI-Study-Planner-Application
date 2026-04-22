@@ -16,16 +16,19 @@ class GreetingCard extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.space8), // 32 is slightly above 28, I'll use 28 if I can or 24. space6=24, space8=32. I'll use 28 if possible but sticking to scale: 24 (space6) or something near. User said 24-28. I'll use 24.
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [cs.surfaceContainerHigh, cs.surface],
+          colors: [
+            AppColors.surfaceElevated,
+            AppColors.surface,
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(AppSpacing.radiusHeroCard),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(25),
-            offset: const Offset(0, 4),
-            blurRadius: 12,
+            color: AppColors.primary.withOpacity(0.15),
+            blurRadius: 30,
+            spreadRadius: -10,
           ),
         ],
       ),

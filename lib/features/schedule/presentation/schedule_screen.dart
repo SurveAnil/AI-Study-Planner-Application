@@ -7,6 +7,7 @@ import '../../plan_draft/presentation/day_plan_editor_screen.dart';
 import '../../session/presentation/active_session_screen.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/di/injection_container.dart' as di;
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -114,7 +115,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     context.read<ScheduleCubit>().loadDay(skill, tomorrowDay, activeDay: context.read<ScheduleCubit>().state.activeDay);
 
     try {
-      final dioClient = DioClient();
+      final dioClient = di.sl<DioClient>();
       await dioClient.warmup();
       await dioClient.safeRequest(
         () => dioClient.dio.post(
@@ -218,6 +219,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Widget _buildDayNavigator(ScheduleState state) {
+    final cs = Theme.of(context).colorScheme;
     return SizedBox(
       height: 90,
       child: ListView.builder(
@@ -257,20 +259,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? Theme.of(context).primaryColor.withAlpha(40)
-                    : Theme.of(context).cardColor,
+                    ? cs.primary.withOpacity(0.15)
+                    : Colors.white.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(16),
-                border: isSelected
-                    ? Border.all(color: Theme.of(context).primaryColor, width: 2)
-                    : Border.all(color: Colors.transparent, width: 2),
-                boxShadow: [
-                  if (!isSelected)
-                    BoxShadow(
-                      color: Colors.black.withAlpha(10),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    )
-                ],
+                border: Border.all(
+                  color: isSelected 
+                      ? cs.primary 
+                      : Colors.white.withOpacity(0.08),
+                  width: isSelected ? 1.5 : 1,
+                ),
               ),
               child: Stack(
                 children: [
@@ -284,7 +281,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: (isSelected || isActive) ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? Theme.of(context).primaryColor : (isActive ? Colors.black87 : Colors.black45),
+                          color: isSelected 
+                              ? cs.primary 
+                              : (isActive ? cs.secondary : cs.onSurfaceVariant),
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -293,7 +292,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 11,
-                          color: isSelected ? Theme.of(context).primaryColor : Colors.black38,
+                          color: isSelected 
+                              ? cs.primary.withOpacity(0.8) 
+                              : cs.onSurfaceVariant.withOpacity(0.7),
                         ),
                       ),
                     ],
@@ -320,6 +321,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Widget _buildDayContent(ScheduleState state) {
+    final cs = Theme.of(context).colorScheme;
     if (!state.isPlanFinalized && state.tasks.isEmpty) {
       final isFuture = state.selectedDay > state.activeDay;
 
@@ -329,11 +331,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(isFuture ? Icons.event_note : Icons.history, size: 64, color: Colors.black12),
+              Icon(isFuture ? Icons.event_note : Icons.history, 
+                  size: 64, 
+                  color: cs.onSurface.withOpacity(0.15)),
               const SizedBox(height: 16),
               Text(
                 isFuture ? "Plan not generated yet" : "No plan records for this day",
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black45),
+                style: TextStyle(
+                    fontSize: 18, 
+                    fontWeight: FontWeight.bold, 
+                    color: cs.onSurface.withOpacity(0.9)),
               ),
               const SizedBox(height: 8),
               Text(
@@ -341,7 +348,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   ? "Ready to keep the momentum? Generate your next focus tasks."
                   : "You didn't have a plan generated for this day.",
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.black38),
+                style: TextStyle(color: cs.onSurfaceVariant),
               ),
               const SizedBox(height: 32),
               if (isFuture)
@@ -361,11 +368,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.edit_document, size: 56, color: Colors.black26),
+            Icon(Icons.edit_document, size: 56, color: cs.onSurface.withOpacity(0.2)),
             const SizedBox(height: 16),
             Text(
               "Your plan for Day ${state.selectedDay} is not finalized.",
-              style: const TextStyle(color: Colors.black54),
+              style: TextStyle(color: cs.onSurfaceVariant),
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
@@ -414,7 +421,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      color: cs.surface,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -479,13 +485,26 @@ class _TaskCardState extends State<_TaskCard> {
     final isFutureDay = widget.day > activeDay;
     final isLocked = isFutureDay && !isDone;
 
-    return Card(
-      elevation: isDone ? 0.5 : 2,
-      shape: RoundedRectangleBorder(
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+      decoration: BoxDecoration(
+        color: isDone 
+            ? Colors.white.withOpacity(0.02) 
+            : Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
-        side: isDone ? BorderSide(color: cs.outlineVariant.withAlpha(50)) : BorderSide.none,
+        border: Border.all(
+          color: Colors.white.withOpacity(isDone ? 0.04 : 0.08),
+          width: 1,
+        ),
+        boxShadow: [
+          if (!isDone)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+        ],
       ),
-      color: isDone ? cs.surfaceContainerLow : cs.surface,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

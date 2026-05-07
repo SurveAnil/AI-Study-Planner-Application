@@ -129,4 +129,27 @@ class AuthCubit extends Cubit<ProfileState> {
       )),
     );
   }
+
+  Future<void> signInWithGoogle() async {
+    emit(state.copyWith(isLoading: true));
+
+    final result = await _repository.signInWithGoogle();
+    result.fold(
+      (failure) => emit(state.copyWith(
+        isLoading: false,
+        errorMessage: failure.message,
+      )),
+      (user) => emit(state.copyWith(
+        user: user,
+        isSetup: true,
+        isLoading: false,
+        errorMessage: null,
+      )),
+    );
+  }
+
+  Future<void> logout() async {
+    await _repository.logout();
+    emit(const ProfileState()); // Reset to empty state
+  }
 }

@@ -19,6 +19,12 @@ dependencies:
   path: ^1.9.1
   path_provider: ^2.1.5
 
+  # Firebase
+  firebase_core: ^4.7.0
+  firebase_auth: ^6.4.0
+  cloud_firestore: ^6.3.0
+  google_sign_in: ^6.2.2
+
   # Network
   dio: ^5.8.0+1
   connectivity_plus: ^6.1.4
@@ -62,16 +68,19 @@ flutter:
   assets:
     - assets/icon/
     - assets/splash/
-
-flutter_launcher_icons:
-  android: "launcher_icon"
-  ios: true
-  image_path: "assets/icon/app_icon.png"
-  min_sdk_android: 21
+    - assets/images/google_logo.png
+    - assets/images/profile_avatar.png
 
 flutter_native_splash:
   color: "#0F141E" # Matches your premium dark background
-  image: "assets/splash/splash_logo.png"
   android_12:
-    image: "assets/splash/splash_logo.png"
+    color: "#0F141E"
     icon_background_color: "#0F141E"
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: false
+  image_path: "assets/icon/app_icon.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#0F141E"
+  adaptive_icon_foreground: "assets/icon/app_icon.png"

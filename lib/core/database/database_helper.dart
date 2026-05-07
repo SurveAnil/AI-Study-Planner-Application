@@ -15,7 +15,7 @@ import 'migrations/migration_011_study_session_metadata.dart';
 import 'migrations/migration_012_auth_fields.dart';
 
 /// Central database helper with version-based migration runner.
-/// See Part 3.3 of SKILL.md.
+
 class DatabaseHelper {
   static const int _dbVersion = 12; // Incremented for migration_012_auth_fields
 

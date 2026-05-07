@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -8,9 +9,12 @@ import 'package:uuid/uuid.dart';
 import 'core/constants/app_colors.dart';
 import 'core/database/database_helper.dart';
 import 'core/di/injection_container.dart' as di;
-import 'features/home/presentation/main_nav_screen.dart';
+import 'core/sync/sync_queue_service.dart';
+import 'core/network/network_info.dart';
 import 'features/auth/presentation/onboarding_screen.dart';
 import 'features/auth/presentation/login_screen.dart';
+import 'features/auth/presentation/splash_screen.dart';
+import 'core/presentation/animations/page_transitions.dart';
 
 // Import Cubits manually right now to wrap the App
 import 'features/plan_draft/bloc/plan_draft_bloc.dart';
@@ -26,6 +30,7 @@ import 'features/auth/bloc/auth_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
 
   // Initialize database
   await DatabaseHelper.database;
@@ -36,6 +41,20 @@ void main() async {
   // Check if it's the first launch
   final prefs = await SharedPreferences.getInstance();
   final showHome = prefs.getBool('showHome') ?? false;
+
+  // ─── Cloud Sync Trigger ──────────────────────────────────────────
+  final syncService = di.sl<SyncQueueService>();
+  final networkInfo = di.sl<NetworkInfo>();
+  
+  // Initial attempt to drain the queue
+  syncService.drainQueue();
+  
+  // Listen for connectivity changes to trigger sync
+  networkInfo.onConnectivityChanged.listen((isConnected) {
+    if (isConnected) {
+      syncService.drainQueue();
+    }
+  });
 
   runApp(StudyPlannerApp(showHome: showHome));
 }
@@ -63,68 +82,76 @@ class StudyPlannerApp extends StatelessWidget {
         BlocProvider(create: (_) => di.sl<AuthCubit>()..loadProfile()),
       ],
       child: MaterialApp(
-      title: 'AI Study Planner',
-      debugShowCheckedModeBanner: false,
+        title: 'AI Study Planner',
+        debugShowCheckedModeBanner: false,
 
-      // ─── Midnight Precision Premium Theme ────────────────────────────
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: AppColors.background,
-        cardColor: AppColors.surface,
-        dividerColor: Colors.white.withAlpha(20), // very subtle
-        
-        colorScheme: const ColorScheme.dark(
-          primary: AppColors.primary,
-          secondary: AppColors.secondaryAccent,
-          surface: AppColors.surface,
-          error: AppColors.error,
-          onPrimary: Colors.white,
-          onSecondary: Colors.black,
-          onSurface: AppColors.textPrimary,
-          onSurfaceVariant: AppColors.textSecondary,
-          primaryContainer: Color(0xFF1E293B), // Elevated surface for primary containers
-          outline: Color(0xFF334155),
-          outlineVariant: Color(0xFF1E293B),
-        ),
-
-        textTheme: GoogleFonts.plusJakartaSansTextTheme(
-          ThemeData.dark().textTheme
-        ).copyWith(
-          // Ensure correct text colors
-          displayLarge: const TextStyle(color: AppColors.textPrimary),
-          displayMedium: const TextStyle(color: AppColors.textPrimary),
-          displaySmall: const TextStyle(color: AppColors.textPrimary),
-          headlineLarge: const TextStyle(color: AppColors.textPrimary),
-          headlineMedium: const TextStyle(color: AppColors.textPrimary),
-          headlineSmall: const TextStyle(color: AppColors.textPrimary),
-          titleLarge: const TextStyle(color: AppColors.textPrimary),
-          titleMedium: const TextStyle(color: AppColors.textPrimary),
-          titleSmall: const TextStyle(color: AppColors.textPrimary),
-          bodyLarge: const TextStyle(color: AppColors.textPrimary),
-          bodyMedium: const TextStyle(color: AppColors.textPrimary),
-          bodySmall: const TextStyle(color: AppColors.textSecondary),
-          labelLarge: const TextStyle(color: AppColors.textPrimary),
-          labelMedium: const TextStyle(color: AppColors.textSecondary),
-          labelSmall: const TextStyle(color: AppColors.textSecondary),
-        ),
-
-        // Default Card Theme for consistency
-        cardTheme: CardThemeData(
-          color: AppColors.surface,
-          elevation: 0,
-          margin: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+        // ─── Midnight Precision Premium Theme ────────────────────────────
+        theme: ThemeData(
+          brightness: Brightness.dark,
+          scaffoldBackgroundColor: AppColors.background,
+          cardColor: AppColors.surface,
+          dividerColor: Colors.white.withAlpha(20), // very subtle
+          
+          colorScheme: const ColorScheme.dark(
+            primary: AppColors.primary,
+            secondary: AppColors.secondaryAccent,
+            surface: AppColors.surface,
+            error: AppColors.error,
+            onPrimary: Colors.white,
+            onSecondary: Colors.black,
+            onSurface: AppColors.textPrimary,
+            onSurfaceVariant: AppColors.textSecondary,
+            primaryContainer: Color(0xFF1E293B), // Elevated surface for primary containers
+            outline: Color(0xFF334155),
+            outlineVariant: Color(0xFF1E293B),
           ),
+
+          textTheme: GoogleFonts.plusJakartaSansTextTheme(
+            ThemeData.dark().textTheme
+          ).copyWith(
+            displayLarge: const TextStyle(color: AppColors.textPrimary),
+            displayMedium: const TextStyle(color: AppColors.textPrimary),
+            displaySmall: const TextStyle(color: AppColors.textPrimary),
+            headlineLarge: const TextStyle(color: AppColors.textPrimary),
+            headlineMedium: const TextStyle(color: AppColors.textPrimary),
+            headlineSmall: const TextStyle(color: AppColors.textPrimary),
+            titleLarge: const TextStyle(color: AppColors.textPrimary),
+            titleMedium: const TextStyle(color: AppColors.textPrimary),
+            titleSmall: const TextStyle(color: AppColors.textPrimary),
+            bodyLarge: const TextStyle(color: AppColors.textPrimary),
+            bodyMedium: const TextStyle(color: AppColors.textPrimary),
+            bodySmall: const TextStyle(color: AppColors.textSecondary),
+            labelLarge: const TextStyle(color: AppColors.textPrimary),
+            labelMedium: const TextStyle(color: AppColors.textSecondary),
+            labelSmall: const TextStyle(color: AppColors.textSecondary),
+          ),
+
+          cardTheme: CardThemeData(
+            color: AppColors.surface,
+            elevation: 0,
+            margin: EdgeInsets.zero,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+
+          useMaterial3: true,
         ),
 
-        useMaterial3: true,
+        themeMode: ThemeMode.dark,
+
+        home: SplashScreen(showHome: showHome),
+        onGenerateRoute: (settings) {
+          switch (settings.name) {
+            case '/login':
+              return PremiumPageRoute(page: const LoginScreen());
+            case '/onboarding':
+              return PremiumPageRoute(page: const OnboardingScreen());
+            default:
+              return null;
+          }
+        },
       ),
-
-      themeMode: ThemeMode.dark, // Enforce Dark Theme
-
-      // Route based on the first-time marker
-      home: showHome ? const LoginScreen() : const OnboardingScreen(),
-    ));
+    );
   }
 }

@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "355669280880",
+    "project_id": "sample-firebase-ai-app-21399",
+    "storage_bucket": "sample-firebase-ai-app-21399.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:355669280880:android:79a901addddca84500ccb5",
+        "android_client_info": {
+          "package_name": "com.studyplanner.ai_study_planner"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "355669280880-88m6u6hh1jbgq9m2rtjdqrqeta8gnnom.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.studyplanner.ai_study_planner",
+            "certificate_hash": "fb4331e24c95cf3b046c9875bd8a497445e031df"
+          }
+        },
+        {
+          "client_id": "355669280880-kn94v2t1oteilrt9500cqp0ek8p3chrv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCfQhKKaj7MMG_N1vkqUdNUy7Z-ApOF_gA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "355669280880-kn94v2t1oteilrt9500cqp0ek8p3chrv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -36,19 +36,34 @@ class _MainNavScreenState extends State<MainNavScreen> {
   }
 
   List<Widget> get _screens => [
-    const HomeScreen(),
-    const ScheduleScreen(),
-    ProgressScreen(skill: _activeSkill ?? 'Data Structures'),
-    const SettingsScreen(),
+    const HomeScreen(key: ValueKey(0)),
+    const ScheduleScreen(key: ValueKey(1)),
+    ProgressScreen(
+        key: const ValueKey(2), skill: _activeSkill ?? 'Data Structures'),
+    const SettingsScreen(key: ValueKey(3)),
   ];
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 400),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (Widget child, Animation<double> animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.01, 0),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            ),
+          );
+        },
+        child: _screens[_currentIndex],
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(

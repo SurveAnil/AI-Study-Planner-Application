@@ -7,6 +7,7 @@ import '../database/database_helper.dart';
 import '../network/dio_client.dart';
 import '../network/network_info.dart';
 import '../sync/sync_queue_service.dart';
+import '../sync/firebase_sync_service.dart';
 
 // ─── Data Sources ─────────────────────────────────────────────────────
 import '../../features/schedule/data/local_study_plan_source.dart';
@@ -64,8 +65,13 @@ Future<void> init() async {
     () => DioClient(settingsRepository: sl<SettingsRepository>()),
   );
   
+  sl.registerLazySingleton<FirebaseSyncService>(() => FirebaseSyncService());
+
   sl.registerLazySingleton<SyncQueueService>(
-    () => SyncQueueService(networkInfo: sl<NetworkInfo>()),
+    () => SyncQueueService(
+      networkInfo: sl<NetworkInfo>(),
+      remoteSync: sl<FirebaseSyncService>(),
+    ),
   );
 
   // ─── Data Sources ─────────────────────────────────────────────────
@@ -141,7 +147,7 @@ Future<void> init() async {
 
   // AuthRepository
   sl.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(),
+    () => AuthRepositoryImpl(syncQueue: sl<SyncQueueService>()),
   );
 
   // SettingsRepository is already registered above (before DioClient).

@@ -3,22 +3,22 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../home/presentation/main_nav_screen.dart';
 import '../bloc/auth_cubit.dart';
-import 'signup_screen.dart';
-import '../../../core/presentation/widgets/animated_button.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SignUpScreenState extends State<SignUpScreen> {
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -30,8 +30,9 @@ class _LoginScreenState extends State<LoginScreen> {
       listener: (context, state) {
         if (state.user != null) {
           // Success: Navigate to MainNavScreen
-          Navigator.of(context).pushReplacement(
+          Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const MainNavScreen()),
+            (route) => false,
           );
         } else if (state.errorMessage != null) {
           // Error: Show SnackBar
@@ -45,26 +46,41 @@ class _LoginScreenState extends State<LoginScreen> {
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: SingleChildScrollView(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 80),
+                  const SizedBox(height: 20),
                   const Text(
-                    "Welcome Back",
+                    "Create Account",
                     style: TextStyle(
                         color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    "Sign in to continue your progress.",
+                    "Join us and start planning your success.",
                     style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 16),
                   ),
                   const SizedBox(height: 48),
+
+                  // Name Field
+                  _buildTextField(
+                    hint: "Full Name",
+                    icon: Icons.person_outline,
+                    controller: _nameController,
+                  ),
+                  const SizedBox(height: 16),
 
                   // Email Field
                   _buildTextField(
@@ -83,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 32),
 
-                  // Login Button
+                  // Sign Up Button
                   BlocBuilder<AuthCubit, ProfileState>(
                     builder: (context, state) {
                       return Container(
@@ -95,113 +111,58 @@ class _LoginScreenState extends State<LoginScreen> {
                             colors: [Color(0xFF4A55A2), Color(0xFF6B7BFF)],
                           ),
                         ),
-                        child: AnimatedButton(
-                          onTap: state.isLoading
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
+                          ),
+                          onPressed: state.isLoading
                               ? null
                               : () {
+                                  final name = _nameController.text.trim();
                                   final email = _emailController.text.trim();
-                                  final password =
-                                      _passwordController.text.trim();
-                                  if (email.isNotEmpty && password.isNotEmpty) {
-                                    context
-                                        .read<AuthCubit>()
-                                        .login(email, password);
+                                  final password = _passwordController.text.trim();
+                                  if (name.isNotEmpty && email.isNotEmpty && password.isNotEmpty) {
+                                    context.read<AuthCubit>().signUp(name, email, password);
                                   } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text(
-                                            "Please enter email and password"),
+                                        content: Text("Please fill in all fields"),
                                         backgroundColor: AppColors.warning,
                                       ),
                                     );
                                   }
                                 },
-                          child: Center(
-                            child: state.isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2, color: Colors.white),
-                                  )
-                                : const Text("Sign In",
-                                    style: TextStyle(
-                                        fontSize: 18,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold)),
-                          ),
+                          child: state.isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Text("Sign Up",
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold)),
                         ),
                       );
                     },
                   ),
-                  const SizedBox(height: 16),
-
-                  // Google Sign In Button
-                  AnimatedButton(
-                    onTap: () => context.read<AuthCubit>().signInWithGoogle(),
-                    child: Container(
-                      width: double.infinity,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white.withOpacity(0.1)),
-                        color: AppColors.surfaceElevated,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.asset(
-                            'assets/images/google_logo.png',
-                            height: 24,
-                          ),
-                          const SizedBox(width: 12),
-                          const Flexible(
-                            child: Text(
-                              "Sign in with Google",
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
 
                   const SizedBox(height: 24),
-
                   Center(
                     child: TextButton(
-                      onPressed: () {
-                        // Skip to MainNavScreen for development
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(builder: (context) => const MainNavScreen()),
-                        );
-                      },
-                      child: Text(
-                        "Skip for now",
-                        style: TextStyle(color: Colors.white.withOpacity(0.5)),
-                      ),
-                    ),
-                  ),
-                  
-                  // Sign Up Link
-                  Center(
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (context) => const SignUpScreen()),
-                        );
-                      },
+                      onPressed: () => Navigator.of(context).pop(),
                       child: RichText(
                         text: TextSpan(
                           style: TextStyle(color: Colors.white.withOpacity(0.5)),
                           children: [
-                            const TextSpan(text: "Don't have an account? "),
+                            const TextSpan(text: "Already have an account? "),
                             TextSpan(
-                              text: "Sign Up",
+                              text: "Sign In",
                               style: TextStyle(
                                 color: AppColors.secondaryAccent,
                                 fontWeight: FontWeight.bold,

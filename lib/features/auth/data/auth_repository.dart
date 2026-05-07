@@ -85,4 +85,6 @@ abstract class AuthRepository {
   // New methods for the Login Function
   Future<Either<Failure, UserProfile>> login(String email, String password);
   Future<Either<Failure, UserProfile>> signUp(String name, String email, String password);
+  Future<Either<Failure, UserProfile>> signInWithGoogle();
+  Future<void> logout();
 }

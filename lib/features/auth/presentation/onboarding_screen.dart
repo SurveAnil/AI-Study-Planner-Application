@@ -45,25 +45,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
       ),
       bottomSheet: isLastPage
-          ? TextButton(
-              style: TextButton.styleFrom(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
-                foregroundColor: Colors.white,
-                backgroundColor: const Color(0xFF4A55A2),
-                minimumSize: const Size.fromHeight(80),
-              ),
-              onPressed: () async {
-                // Save the marker so onboarding never shows again
-                final prefs = await SharedPreferences.getInstance();
-                prefs.setBool('showHome', true);
+          ? Container(
+              color: AppColors.background,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              child: TextButton(
+                style: TextButton.styleFrom(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  foregroundColor: Colors.white,
+                  backgroundColor: AppColors.primary,
+                  minimumSize: const Size.fromHeight(60),
+                ),
+                onPressed: () async {
+                  // Save the marker so onboarding never shows again
+                  final prefs = await SharedPreferences.getInstance();
+                  prefs.setBool('showHome', true);
 
-                if (mounted) {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => const LoginScreen()),
-                  );
-                }
-              },
-              child: const Text("Get Started", style: TextStyle(fontSize: 20)),
+                  if (mounted) {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                    );
+                  }
+                },
+                child: const Text("Get Started", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
             )
           : Container(
               padding: const EdgeInsets.symmetric(horizontal: 20),

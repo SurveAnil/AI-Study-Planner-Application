@@ -1,27 +1,25 @@
 import 'dart:convert';
-
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
-
 import '../database/database_helper.dart';
 import '../network/network_info.dart';
+import 'firebase_sync_service.dart';
 
 /// Operation types for sync queue entries.
 enum SyncOp { insert, update, delete }
 
 /// Buffers all local writes for future cloud sync.
 /// See Part 8.2 of SKILL.md.
-///
-/// Every SQLite write must:
-/// 1. Write with sync_status = 'local'
-/// 2. Set updated_at = DateTime.now().toUtc()
-/// 3. Enqueue to sync_queue via this service
 class SyncQueueService {
   final NetworkInfo _networkInfo;
+  final FirebaseSyncService _remoteSync;
   static const _uuid = Uuid();
 
-  SyncQueueService({required NetworkInfo networkInfo})
-      : _networkInfo = networkInfo;
+  SyncQueueService({
+    required NetworkInfo networkInfo,
+    required FirebaseSyncService remoteSync,
+  })  : _networkInfo = networkInfo,
+        _remoteSync = remoteSync;
 
   /// Enqueue a record change for later sync.
   /// Called on every SQLite write.
@@ -44,7 +42,6 @@ class SyncQueueService {
   }
 
   /// Drain the sync queue when connectivity is restored.
-  /// Called by ConnectivityPlus listener on reconnect.
   Future<void> drainQueue() async {
     final isConnected = await _networkInfo.isConnected;
     if (!isConnected) return;
@@ -57,16 +54,29 @@ class SyncQueueService {
 
     for (final row in pending) {
       try {
-        // Implementation for remote push will go here
-        // await _remote.pushRecord(row);
+        final payload = jsonDecode(row['payload'] as String) as Map<String, dynamic>;
+        
+        // Push to Firebase
+        await _remoteSync.pushRecord({
+          ...row,
+          'payload': payload,
+        });
 
-        // On success, remove from queue
+        // On success, update the original record and remove from queue
+        await db.update(
+          row['table_name'] as String,
+          {'sync_status': 'synced'},
+          where: 'id = ?',
+          whereArgs: [row['record_id']],
+        );
+
         await db.delete(
           'sync_queue',
           where: 'id = ?',
           whereArgs: [row['id']],
         );
       } catch (e) {
+
         final retries = (row['retry_count'] as int) + 1;
         if (retries >= 5) {
           // Escalate to conflict resolution

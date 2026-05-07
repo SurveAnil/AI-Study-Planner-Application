@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../roadmap/data/roadmap_local_service.dart';
 import '../data/study_plan_repository.dart';
+import '../../../core/util/app_logger.dart';
 
 class ScheduleState {
   final bool isLoading;
@@ -140,7 +141,7 @@ class ScheduleCubit extends Cubit<ScheduleState> {
         progress: progress,
       ));
     } catch (e) {
-      print("Error loading day $targetDay: $e");
+      logger.e("Error loading day $targetDay: $e");
       emit(state.copyWith(isLoading: false));
     }
   }

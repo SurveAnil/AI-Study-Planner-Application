@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'roadmap_history_screen.dart';
 import 'learning_setup_screen.dart';
 import '../data/roadmap_local_service.dart';
+import '../../../core/util/app_logger.dart';
 
 /// RoadmapScreen — Phase 1.6
 /// Receives the roadmap [Map] and renders stage cards with topics, tools and
@@ -40,14 +41,14 @@ class _RoadmapScreenState extends State<RoadmapScreen>
   }
 
   Future<void> _loadRoadmap() async {
-    print("Fetching roadmap from DB");
+    logger.i("Fetching roadmap from DB");
     try {
       final data = await RoadmapLocalService.instance.getRoadmapForSkill(
         widget.skill,
       );
       if (data != null) {
         final stages = data['stages'] as List? ?? [];
-        print("Stages count: ${stages.length}");
+        logger.i("Stages count: ${stages.length}");
 
         if (mounted) {
           setState(() {

@@ -4,16 +4,10 @@ import 'package:crypto/crypto.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../../core/database/database_helper.dart';
+import '../../../core/util/app_logger.dart';
 
 /// Handles reading and writing roadmap, daily-plan, and task-progress data
 /// from/to SQLite.
-///
-/// All methods are **skill-scoped** so multiple roadmaps can coexist without
-/// data collisions.
-///
-/// This service is intentionally a plain Dart class (no Bloc/Cubit) so it can
-/// be used directly from StatefulWidget screens without extra BlocProvider
-/// boilerplate.
 class RoadmapLocalService {
   // ── Singleton ─────────────────────────────────────────────────────────────
 
@@ -22,8 +16,7 @@ class RoadmapLocalService {
 
   // ── Roadmap ───────────────────────────────────────────────────────────────
 
-  /// Inserts a new roadmap row.  Multiple roadmaps are kept (one per skill
-  /// generation).  [skill] is stored both as a column and inside [roadmap].
+  /// Inserts a new roadmap row.
   Future<void> saveRoadmap(String skill, Map<String, dynamic> roadmap, {String? startDate}) async {
     final db = await DatabaseHelper.database;
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -35,7 +28,7 @@ class RoadmapLocalService {
       'start_date': startDate,
     });
     
-    print("Roadmap saved successfully to roadmap_cache");
+    logger.i("Roadmap saved successfully to roadmap_cache");
   }
 
   /// Returns the most recently generated roadmap, or null if none exists.
@@ -52,7 +45,6 @@ class RoadmapLocalService {
       final decoded = await compute(_decodeMap, source);
       if (decoded == null) return null;
       
-      // Inject the skill column so callers always have it
       decoded['skill'] ??= rows.first['skill'];
       return decoded;
     } catch (_) {
@@ -60,8 +52,7 @@ class RoadmapLocalService {
     }
   }
 
-  /// Returns every saved roadmap, newest first.  Each element contains:
-  ///   `{ 'skill': String, 'roadmap_json': String, 'created_at': int }`
+  /// Returns every saved roadmap, newest first.
   Future<List<Map<String, dynamic>>> getAllRoadmaps() async {
     final db = await DatabaseHelper.database;
     return db.query(
@@ -122,14 +113,12 @@ class RoadmapLocalService {
     final startDate = DateTime.parse(startDateStr);
     
     if (startDate.isAfter(todayDate)) {
-      // Future start date handling: Keep current_day=1
       return false;
     }
 
     final lastActiveDate = DateTime.parse(lastActiveStr);
 
     if (todayDate.isBefore(lastActiveDate)) {
-      debugPrint("System time anomaly detected: Time moved backward");
       return true; // time_anomaly = true
     }
 
@@ -148,10 +137,9 @@ class RoadmapLocalService {
         );
       }
     }
-    return false; // time_anomaly = false
+    return false;
   }
 
-  /// Manually updates the current_day for [skill].
   Future<void> updateCurrentDay(String skill, int newDay) async {
     final db = await DatabaseHelper.database;
     final todayStr = DateTime.now().toIso8601String().split('T')[0];
@@ -168,12 +156,6 @@ class RoadmapLocalService {
 
   // ── Daily Plan ────────────────────────────────────────────────────────────
 
-  /// Saves a daily plan for [skill]/[day].  Replaces any existing row for the
-  /// same skill+day combination.
-  ///
-  /// [date] is an optional ISO-8601 date string (yyyy-MM-dd) to bind the plan
-  /// to a calendar date.  [stageIndex] tracks which roadmap stage this plan
-  /// belongs to.
   Future<void> saveDailyPlan(
     String skill,
     int day,
@@ -186,7 +168,6 @@ class RoadmapLocalService {
     final db = await DatabaseHelper.database;
     final now = DateTime.now().millisecondsSinceEpoch;
 
-    // Delete existing row for this skill+day (if any) then insert fresh
     await db.delete(
       'daily_plan_cache',
       where: 'skill = ? AND day = ?',
@@ -205,7 +186,6 @@ class RoadmapLocalService {
     });
   }
 
-  /// Returns the cached daily plan for [skill]/[day], or null if not found.
   Future<Map<String, dynamic>?> getDailyPlan(String skill, int day) async {
     final db = await DatabaseHelper.database;
     final rows = await db.query(
@@ -223,7 +203,6 @@ class RoadmapLocalService {
         decodedMap['is_pre_generated'] = rows.first['is_pre_generated'];
         decodedMap['status'] = rows.first['status'];
 
-        // --- Migration: Assign task_position and task_id ---
         bool migrated = false;
         final tasks = decodedMap['tasks'] as List? ?? [];
         for (int i = 0; i < tasks.length; i++) {
@@ -240,7 +219,6 @@ class RoadmapLocalService {
         }
 
         if (migrated) {
-          // Update silently
           await db.update(
             'daily_plan_cache',
             {'plan_json': json.encode(decodedMap)},
@@ -255,9 +233,6 @@ class RoadmapLocalService {
     }
   }
 
-  /// Returns all daily plans whose `date` column matches [dateStr]
-  /// (format: yyyy-MM-dd).  Used by the Schedule screen to show AI-generated
-  /// tasks for a given day.
   Future<List<Map<String, dynamic>>> getPlansForDate(String dateStr) async {
     final db = await DatabaseHelper.database;
     return db.query(
@@ -267,7 +242,6 @@ class RoadmapLocalService {
     );
   }
 
-  /// Marks a specific day's plan as finalized so it can be executed.
   Future<void> finalizePlan(String skill, int day) async {
     final db = await DatabaseHelper.database;
     await db.update(
@@ -278,7 +252,6 @@ class RoadmapLocalService {
     );
   }
 
-  /// Checks if a day's plan has been finalized.
   Future<bool> isPlanFinalized(String skill, int day) async {
     final db = await DatabaseHelper.database;
     final rows = await db.query(
@@ -295,7 +268,6 @@ class RoadmapLocalService {
 
   // ── Smart Scheduling ──────────────────────────────────────────────────────
 
-  /// Centralized date calculation string (yyyy-MM-dd)
   String calculateDate(String startDateStr, int dayNumber) {
     if (startDateStr.isEmpty) return '';
     try {
@@ -316,8 +288,6 @@ class RoadmapLocalService {
     return md5.convert(bytes).toString();
   }
 
-  /// Updates (or inserts) the completion status for a specific task.
-  /// [status] should be `"pending"` or `"completed"`.
   Future<void> updateTaskStatus(
       String skill, int day, int index, String taskId, String status) async {
     final db = await DatabaseHelper.database;
@@ -337,7 +307,6 @@ class RoadmapLocalService {
         whereArgs: [existing.first['id']],
       );
     } else {
-      // Safe Migration check
       final oldRows = await db.query(
           'task_progress',
           where: 'skill = ? AND day = ? AND task_index = ?',
@@ -362,7 +331,6 @@ class RoadmapLocalService {
     }
   }
 
-  /// Returns the saved status for a specific task, or null if not tracked.
   Future<String?> getTaskStatus(String skill, int day, int index, String taskId) async {
     final db = await DatabaseHelper.database;
     final rows = await db.query(
@@ -374,7 +342,6 @@ class RoadmapLocalService {
     );
     if (rows.isNotEmpty) return rows.first['status'] as String?;
 
-    // Safe migration check
     final oldRows = await db.query(
       'task_progress',
       columns: ['id', 'status'],
@@ -383,7 +350,6 @@ class RoadmapLocalService {
       limit: 1,
     );
     if (oldRows.isNotEmpty) {
-      // update silently
       await db.update('task_progress', {'task_id': taskId},
           where: 'id = ?', whereArgs: [oldRows.first['id']]);
       return oldRows.first['status'] as String?;
@@ -393,13 +359,11 @@ class RoadmapLocalService {
 
   // ── Day Completion ────────────────────────────────────────────────────────
 
-  /// Records that the user has completed [day] for [skill].
   Future<void> markDayComplete(String skill, int day,
       {int stageIndex = 0}) async {
     final db = await DatabaseHelper.database;
     final now = DateTime.now().millisecondsSinceEpoch;
 
-    // Avoid duplicate entries
     final existing = await db.query(
       'day_completion',
       where: 'skill = ? AND day = ?',
@@ -416,7 +380,6 @@ class RoadmapLocalService {
     });
   }
 
-  /// Returns true if [day] has been marked complete for [skill].
   Future<bool> isDayCompleted(String skill, int day) async {
     final db = await DatabaseHelper.database;
     final rows = await db.query(
@@ -428,10 +391,6 @@ class RoadmapLocalService {
     return rows.isNotEmpty;
   }
 
-  /// Marks [day] for [skill] as skipped ('Take Day Off').
-  /// If no row exists yet for this day (plan never fetched), a placeholder
-  /// row is inserted so the status can be tracked and future navigation
-  /// correctly jumps over it.
   Future<void> markDaySkipped(String skill, int day) async {
     final db = await DatabaseHelper.database;
     final existing = await db.query(
@@ -449,7 +408,6 @@ class RoadmapLocalService {
         whereArgs: [skill, day],
       );
     } else {
-      // No plan fetched yet — insert a lightweight placeholder.
       await db.insert('daily_plan_cache', {
         'skill': skill,
         'day': day,
@@ -460,12 +418,6 @@ class RoadmapLocalService {
     }
   }
 
-  /// Returns the lowest day number for [skill] whose status is neither
-  /// 'completed' nor 'skipped'.  Accounts for gaps (days whose rows don't
-  /// exist yet are treated as 'pending').
-  ///
-  /// Example: days 1=completed, 2=skipped, 3=pending → returns 3.
-  /// Example: all saved days done → returns maxDay + 1.
   Future<int> getNextPendingDay(String skill) async {
     final db = await DatabaseHelper.database;
     final rows = await db.query(
@@ -479,26 +431,19 @@ class RoadmapLocalService {
     if (rows.isEmpty) return 1;
 
     final int maxDay = (rows.last['day'] as int?) ?? 1;
-
-    // Build a day→status map for quick lookup.
     final Map<int, String> statusMap = {
       for (final r in rows)
         (r['day'] as int): (r['status'] as String? ?? 'pending'),
     };
 
-    // Walk every day from 1 to maxDay; the first day without a
-    // 'completed'/'skipped' status is the next pending day.
     for (int d = 1; d <= maxDay; d++) {
       final s = statusMap[d] ?? 'pending';
       if (s != 'completed' && s != 'skipped') return d;
     }
 
-    // All known days are done/skipped — advance to the next one.
     return maxDay + 1;
   }
 
-  /// Returns the highest day number that's been completed for [skill],
-  /// or 0 if nothing completed yet.
   Future<int> getLastCompletedDay(String skill) async {
     final db = await DatabaseHelper.database;
     final rows = await db.rawQuery(
@@ -511,7 +456,6 @@ class RoadmapLocalService {
 
   // ── Active Skill ──────────────────────────────────────────────────────────
 
-  /// Sets the currently active skill in app_settings.
   Future<void> setActiveSkill(String skill) async {
     final db = await DatabaseHelper.database;
     await db.rawInsert(
@@ -520,7 +464,6 @@ class RoadmapLocalService {
     );
   }
 
-  /// Returns the currently active skill, or null if none set.
   Future<String?> getActiveSkill() async {
     final db = await DatabaseHelper.database;
     final rows = await db.query(
@@ -535,7 +478,6 @@ class RoadmapLocalService {
 
   // ── Skill-Specific Queries ────────────────────────────────────────────────
 
-  /// Returns the latest roadmap for a specific [skill], or null.
   Future<Map<String, dynamic>?> getRoadmapForSkill(String skill) async {
     final db = await DatabaseHelper.database;
     final rows = await db.query(
@@ -556,7 +498,6 @@ class RoadmapLocalService {
     }
   }
 
-  /// Returns all distinct skill names from roadmap_cache, newest first.
   Future<List<String>> getDistinctSkills() async {
     final db = await DatabaseHelper.database;
     final rows = await db.rawQuery(
@@ -565,7 +506,6 @@ class RoadmapLocalService {
     return rows.map((r) => r['skill'] as String).toList();
   }
 
-  /// Returns AI daily plans for a specific [dateStr] AND [skill].
   Future<List<Map<String, dynamic>>> getPlansForDateAndSkill(
       String dateStr, String skill) async {
     final db = await DatabaseHelper.database;
@@ -577,7 +517,6 @@ class RoadmapLocalService {
   }
 }
 
-// Top-level function for background isolate parsing
 Map<String, dynamic>? _decodeMap(String source) {
   try {
     return json.decode(source) as Map<String, dynamic>;

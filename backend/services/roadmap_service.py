@@ -16,7 +16,6 @@ def generate_roadmap(skill: str, duration_days: int = 90) -> dict:
     Falls back to a mock roadmap if the API key is missing or the call fails.
     """
     if not _OPENROUTER_API_KEY or _OPENROUTER_API_KEY == "YOUR_OPENROUTER_API_KEY_HERE":
-        print("[Roadmap] No API key — using mock roadmap.")
         return _mock_roadmap(skill)
 
     prompt = f"""Generate a detailed learning roadmap for: {skill} spanning exactly {duration_days} days.
@@ -90,8 +89,7 @@ The JSON must follow this exact structure:
 
             resp_json = response.json()
             raw: str = resp_json.get("choices", [{}])[0].get("message", {}).get("content", "")
-            print(f"[Roadmap] Raw response preview: {raw[:300]}...")
-
+            
             # Strip markdown code fences if the model wraps the JSON anyway
             cleaned = raw.strip()
             if cleaned.startswith("```"):
@@ -111,8 +109,7 @@ The JSON must follow this exact structure:
                 return _mock_roadmap(skill, duration_days, warning="LLM returned invalid JSON after 2 retries.")
 
         except Exception as e:
-            print(f"[Roadmap Error] {type(e).__name__}: {e}")
-            return _mock_roadmap(skill, duration_days, warning=f"LLM Error: {str(e)[:80]}")
+            return _mock_roadmap(skill, duration_days, warning="LLM Error")
 
     return _mock_roadmap(skill, duration_days)
 
